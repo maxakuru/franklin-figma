@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "lib": [
+      "dom",
+      "es2020"
+    ],
+    "typeRoots": [
+      "../../node_modules/@figma"
+    ],
+    "skipLibCheck": true,
+    "declaration": true
+  },
+  "include": [
+    "src"
+  ]
+}

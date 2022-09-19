@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "jsx": "react",
+    "jsxFactory": "figma.widget.h",
+    "jsxFragmentFactory": "figma.widget.Fragment",
+    "typeRoots": [
+      "../../node_modules/@figma"
+    ],
+    "declaration": true
+  },
+  "include": [
+    "src"
+  ]
+}

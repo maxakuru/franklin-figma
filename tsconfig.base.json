@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "moduleResolution": "node",
+    "target": "es6",
+    "lib": [
+      "es6",
+    ],
+    "strictNullChecks": false,
+    "strict": true,
+    "skipLibCheck": true
+  },
+  "files": [
+    "global.d.ts"
+  ]
+}

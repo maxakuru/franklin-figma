@@ -1,0 +1,17 @@
+{
+  "name": "@franklin-figma/messages",
+  "version": "1.0.0",
+  "description": "AEM Franklin Figma Plugin messages",
+  "main": "dist/index.js",
+  "type": "module",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "watch": "npm run build -- -w"
+  },
+  "author": "",
+  "license": "",
+  "dependencies": {
+    "@figma/plugin-typings": "1.51.0"
+  }
+}

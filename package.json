@@ -1,0 +1,23 @@
+{
+  "name": "franklin-figma",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AEM Franklin Figma Plugin",
+  "type": "module",
+  "scripts": {
+    "build": "npm run -ws build",
+    "watch": "npm run -ws watch"
+  },
+  "author": "",
+  "license": "",
+  "devDependencies": {
+    "@types/node": "18.7.18",
+    "typescript": "4.8.3"
+  },
+  "workspaces": [
+    "packages/!(backend|ui|widgets)",
+    "packages/widgets",
+    "packages/backend",
+    "packages/ui"
+  ]
+}

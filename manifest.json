@@ -1,0 +1,15 @@
+{
+  "name": "AEM Franklin",
+  "id": "1152303696398026079",
+  "api": "1.0.0",
+  "main": "packages/backend/dist/index.js",
+  "editorType": [
+    "figma",
+    "figjam"
+  ],
+  "containsWidget": true,
+  "widgetApi": "1.0.0",
+  "ui": {
+    "ui": "packages/ui/dist/index.html"
+  }
+}
