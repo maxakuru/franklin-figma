@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "build": "node build.mjs",
-    "watch": "npm run build -- -w"
+    "dev": "npm run build -- -w"
   },
   "author": "",
   "license": "",

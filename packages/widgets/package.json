@@ -5,8 +5,8 @@
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
-    "build": "tsc",
-    "watch": "npm run build -- -w"
+    "build": "node build.mjs",
+    "dev": "npm run build -- -w"
   },
   "author": "",
   "license": "",

@@ -6,12 +6,19 @@
   "type": "module",
   "scripts": {
     "build": "npm run -ws build",
-    "watch": "npm run -ws watch"
+    "dev:messages": "npm run dev -w packages/messages",
+    "dev:ui": "npm run dev -w packages/ui",
+    "dev:backend": "npm run dev -w packages/backend",
+    "dev:widgets": "npm run dev -w packages/widgets",
+    "dev": "concurrently -k \"npm:dev:*\"",
+    "lint": "npm run lint --ws --if-present",
+    "test": "npm test --ws --if-present"
   },
   "author": "",
   "license": "",
   "devDependencies": {
     "@types/node": "18.7.18",
+    "concurrently": "7.4.0",
     "typescript": "4.8.3"
   },
   "workspaces": [
