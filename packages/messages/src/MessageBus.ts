@@ -1,31 +1,95 @@
 /// <reference path="../../../node_modules/@figma/plugin-typings/plugin-api.d.ts" />
 
+import { isPrivateMessage, serialize } from "./util";
+
 const geval = eval;
 
+export type AnyFunc = (...args: any[]) => any;
+
 export type OffFunction = () => void;
-export type MessageType = 'test';
-export interface BaseMessage {
-  type: MessageType;
-  payload: Record<string, unknown>;
+export type MessageType =
+  | 'test'
+  | 'close'
+  | 'selection:change'
+  | 'currentpage:change'
+  | 'ui:ready'
+  | 'ui:init'
+  | 'ui:close';
+
+/** @private */
+export type PrivateMessageType = '__execute__';
+
+type AnyMessageType = MessageType | PrivateMessageType;
+
+/** @private */
+export interface BaseMessage<TMessageType extends AnyMessageType = AnyMessageType> {
+  type: TMessageType;
+  payload: Record<string, unknown> | undefined;
 }
-export type AnyMessageMap = { [K in MessageType]: BaseMessage; }
-export interface MessageMap extends AnyMessageMap {
-  'test': BaseMessage;
+
+export type AnyPayloadMap = { [K in MessageType]: Record<string, unknown> | undefined; }
+
+export interface PayloadMap extends AnyPayloadMap {
+  'selection:change': {
+    nodes: SceneNode[];
+  };
+  'currentpage:change': any;
+  'close': any;
+  'ui:ready': undefined;
+  'ui:init': {
+    uiType: 'config';
+    nodeType: 'PAGE' | 'FORM';
+    nodeId: string;
+  };
+  'ui:close': {
+    uiType: 'config';
+    nodeType: 'PAGE' | 'FORM';
+    nodeId: string;
+  };
 }
-export type PayloadMap = {
-  [K in keyof MessageMap]: MessageMap[K]['payload'];
-}
+
+/** @private */
+type AnyPrivatePayloadMap = { [K in PrivateMessageType]: Record<string, unknown> | undefined; }
+
 export type MessageHandler<T extends MessageType> = (payload: PayloadMap[T]) => void | Promise<void>
 export type AllMessagesHandler = <T extends MessageType>(type: T, payload: PayloadMap[T]) => void | Promise<void>
 
 export type Context = PluginAPI;
+
+export type ExecFunc = (this: null, figma: Context, ...args: any[]) => any;
+
+/** @private */
+interface PrivatePayloadMap extends AnyPrivatePayloadMap, PayloadMap {
+  __execute__: {
+    id: number;
+    fn?: string;
+    args?: Record<string, unknown>;
+  } | {
+    id: number;
+    ret?: any;
+  } | {
+    id: number;
+    error?: any;
+  }
+}
+
+/** @private */
+type MaybeOptionalPayloadFn<T extends MessageType> = PayloadMap[T] extends undefined
+  ? (type: T, payload?: undefined) => void
+  : (type: T, payload?: PayloadMap[T]) => void;
 
 const dev = globalThis.DEV;
 
 class MessageBus {
   #frontend: boolean;
   #handlers: Record<MessageType, MessageHandler<any>[]> = {
-    "test": []
+    "test": [],
+    "selection:change": [],
+    "currentpage:change": [],
+    "close": [],
+    "ui:ready": [],
+    "ui:init": [],
+    "ui:close": []
   };
   #wildcardHandlers: AllMessagesHandler[] = [];
   #execId: number = 0;
@@ -38,66 +102,64 @@ class MessageBus {
 
   private _connect() {
     if (this.#frontend) {
-      console.log('[MessageBus] _connect(ui)');
-
       onmessage = this._incomingFrontend.bind(this);
     } else {
-      console.log('[MessageBus] _connect(backend)');
-
       figma.ui.onmessage = this._incomingBackend.bind(this);
     }
   }
 
   private _incomingBackend(message: BaseMessage, props: OnMessageProperties) {
-    console.log('_incomingBackend: ', message, props);
+    // console.log('[MessageBus] _incomingBackend: ', message, props);
 
-    if (message.type as string === '__execute__') {
-      console.log('[backend] execute: ', message.payload);
-      const { id, fn } = message.payload as { id: number; fn: string };
-      console.log('[backend] id, fn: ', id, fn);
-      const evalRet = geval(`(${fn}).call(figma);`);
+    if (isPrivateMessage(message)) {
+      const { type } = message as BaseMessage<typeof message.type>;
+      const { payload } = message as BaseMessage & { payload: PrivatePayloadMap[typeof type] };
+      if (type === '__execute__') {
+        console.log('[MessageBus] _incomingBackend() execute: ', payload);
+        const { id, fn, args = {} } = payload;
+        const scopeFn = new Function('figma', ...Object.keys(args), `return (${fn})(figma);`);
+        const evalFn = `(${scopeFn}).call(null, figma, ...${JSON.stringify(Object.values(args))});`;
+        const evalRet = geval(evalFn);
 
-      if (typeof evalRet === 'object' && typeof evalRet.then === 'function') {
-        evalRet.then((ret: any) => {
-          console.log('[backend] promise ret: ', ret);
-          this._sendExecute(id, { ret });
-        }).catch((error: any) => {
-          console.log('[backend] error: ', error);
-          this._sendExecute(id, { error });
-        });
-      } else {
-        console.log('[backend] ret: ', evalRet);
-        this._sendExecute(id, { ret: evalRet });
+        if (typeof evalRet === 'object' && typeof evalRet.then === 'function') {
+          evalRet.then((ret: any) => {
+            this._sendExecute({ id, ret: serialize(ret) });
+          }).catch((error: any) => {
+            this._sendExecute({ id, error });
+          });
+        } else {
+          this._sendExecute({ id, ret: serialize(evalRet) });
+        }
+
       }
-
     } else {
-      this._incoming(message);
+      this._incoming(message as BaseMessage<MessageType>);
     }
   }
 
   private _incomingFrontend({ data }: { data: { pluginMessage: BaseMessage } }) {
-    console.log('_incomingFrontend: ', data);
+    // console.log('[MessageBus] _incomingFrontend() data: ', data);
     const { pluginMessage: message } = data;
-    // const message = JSON.parse(pluginMessage as unknown as string);
-
-    if (message.type as string === '__execute__') {
-      const { id, ret, error } = message.payload;
-      const [_, resolve, reject] = this.#execPromises[id as number];
-      if (error) {
-        reject(error);
-      } else {
-        resolve(ret);
+    if (isPrivateMessage(message)) {
+      if (message.type === '__execute__') {
+        const { id, ret, error } = message.payload as { id: number; ret: any; error: any; };
+        const [_, resolve, reject] = this.#execPromises[id];
+        if (error) {
+          reject(error);
+        } else {
+          resolve(ret);
+        }
+        delete this.#execPromises[id];
       }
-      delete this.#execPromises[id as number];
     } else {
-      this._incoming(message);
+      this._incoming(message as BaseMessage<MessageType>);
     }
   }
 
-  private _incoming(message: BaseMessage) {
-    console.log('_incoming: ', message);
+  private _incoming(message: BaseMessage<MessageType>) {
+    // console.log('[MessageBus] _incoming() message: ', message);
     if (!message.type) {
-      console.error('Invalid message: ', message);
+      console.error('[MessageBus] Invalid message: ', message);
       return;
     }
 
@@ -117,27 +179,20 @@ class MessageBus {
     })
   }
 
-  private _sendExecute(id: number, { fn, ret, error }: { fn?: string, ret?: any, error?: any }) {
-    this._send('__execute__', {
-      id,
-      fn,
-      ret,
-      error
-    })
+  private _sendExecute(payload: PrivatePayloadMap['__execute__']) {
+    this._send('__execute__', payload);
   }
+
   execute<
-    T extends (this: Context) => any, TRet = ReturnType<T>
-  >(fn: (
-    this: Context,
-    ...args: Parameters<T>
-  ) => ReturnType<T>
-  ): Promise<TRet> {
+    TFunc extends ExecFunc,
+    TRet = ReturnType<TFunc>
+  >(fn: TFunc, args?: Record<string, unknown>): Promise<TRet> {
     if (!this.#frontend) {
       throw Error('Can only be done from UI');
     }
 
     const id = this.#execId++;
-    this._sendExecute(id, { fn: fn.toString() });
+    this._sendExecute({ id, fn: fn.toString(), args });
 
     let res, rej;
     const prom = new Promise((resolve, reject) => {
@@ -148,22 +203,30 @@ class MessageBus {
     return prom as Promise<TRet>;
   }
 
+  send<T extends MessageType, TPayload extends AnyFunc = MaybeOptionalPayloadFn<T>>(...args: Parameters<TPayload>): void;
   send<T extends MessageType>(type: T, payload: PayloadMap[T]) {
     this._send(type, payload);
   }
 
-  private _send(type: string, payload: any) {
+  private _send<T extends MessageType | PrivateMessageType>(type: T, payload: PrivatePayloadMap[T]) {
     if (this.#frontend) {
-      console.log('[messages] _send(ui)');
       parent.postMessage({ pluginMessage: { type, payload } }, dev ? '*' : '/');
     } else {
-      console.log('[messages] _send(backend)');
       figma.ui.postMessage({ type, payload }, { origin: dev ? '*' : '/' });
     }
   }
 
+  once<T extends MessageType>(type: T, handler: MessageHandler<T>): void {
+    let off: OffFunction;
+    const wrap = (payload: PayloadMap[T]) => {
+      handler.call(null, payload);
+      off();
+    }
+    off = this.on(type, wrap);
+  }
+
   on(type: '*', handler: AllMessagesHandler): OffFunction;
-  on<T extends MessageType>(type: T, handler: MessageHandler<T>): OffFunction
+  on<T extends MessageType>(type: T, handler: MessageHandler<T>): OffFunction;
   on<
     T extends MessageType | '*',
     THandler = T extends MessageType ? MessageHandler<T> : AllMessagesHandler

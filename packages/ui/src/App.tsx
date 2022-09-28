@@ -4,40 +4,34 @@ import MessageBus from '@franklin-figma/messages';
 
 
 const App = () => {
+    const [loading, setLoading] = useState(true);
+    const [uiType, setUiType] = useState<'config'>();
+    const [nodeType, setNodeType] = useState<'PAGE'|'FORM'>();
+    const [nodeId, setNodeId] = useState<string>();
+
     useEffect(() => {
-        MessageBus.on('test', (payload) => {
-            console.log('[UI] on test: ', payload);
+        MessageBus.once('ui:init', async (payload) => {
+            console.log('[UI] init: ', payload);
+            const { 
+                uiType: pUiType, 
+                nodeType: pNodeType, 
+                nodeId: pNodeId 
+            } = payload;
+            const node = await MessageBus.execute((figma) => {
+                return figma.getNodeById(pNodeId);
+            }, { pNodeId });
+            console.log('node: ', node);
+            setNodeType(pNodeType);
+            setUiType(pUiType);
+            setNodeId(pNodeId);
+            setLoading(false);
         });
-    }, []);
-
-    const onClick = useCallback(() => {
-        MessageBus.send('test', {hello: true});
-    }, []);
-
-    const setPluginData = useCallback(async () => {
-        const resp = await MessageBus.execute(async function() {        
-            const data = this.currentPage.getPluginData('test');
-            console.log('data type: ', data, typeof data);
-            const parsed = JSON.parse(data);
-            parsed.test++;
-            this.currentPage.setPluginData('test', JSON.stringify(parsed));
-        });
-        console.log('[set] resp: ', resp);
-    }, []);
-
-    const getPluginData = useCallback(async () => {
-        const resp = await MessageBus.execute(async function() {        
-            return this.currentPage.getPluginData('test');
-        });
-        console.log('[get] resp: ', resp);
+        MessageBus.send('ui:ready');
     }, []);
 
     return(<>
-        <h1>test</h1>
-        <button onClick={onClick}>send message</button>
-        <button onClick={setPluginData}>increment plugin data</button>
-        <button onClick={getPluginData}>get plugin data</button>
-
+        <h1>{loading ? 'Loading...' : uiType}</h1>
+        <p>{nodeType} ({nodeId})</p>
     </>)
 };
 

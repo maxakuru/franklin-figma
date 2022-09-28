@@ -50,7 +50,7 @@ try {
     sourcemap: dev && 'inline',
     format: 'esm',
     watch: watch ? { onRebuild } : false,
-    target: 'esnext',
+    target: 'es2017',
     define: {},
     minify: !dev,
     treeShaking: true,
@@ -60,9 +60,7 @@ try {
     tsconfig: path.resolve(__dirname, './tsconfig.json'),
   });
 
-  if(!watch) {
-    await writeHtml();
-  }
+  await writeHtml();
 } catch {
   process.exitCode = 1;
 }

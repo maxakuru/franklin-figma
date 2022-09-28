@@ -3,7 +3,7 @@
   "compilerOptions": {
     "lib": [
       "dom",
-      "es2020"
+      "es2017"
     ],
     "outDir": "dist",
     "jsx": "react",

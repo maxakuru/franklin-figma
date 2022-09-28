@@ -1,8 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 0 18 18" width="18">
+export default (fill: string = '#000') => `<svg xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 0 18 18" width="18">
   <defs>
     <style>
       .fill {
-        fill: #fff;
+        fill: ${fill};
       }
     </style>
   </defs>
@@ -17,4 +17,4 @@
   <rect class="fill" height="3" rx="0.5" width="3" x="1" y="13" />
   <rect class="fill" height="3" rx="0.5" width="3" x="7" y="13" />
   <rect class="fill" height="3" rx="0.5" width="3" x="13" y="13" />
-</svg>
+</svg>`

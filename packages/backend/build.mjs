@@ -34,7 +34,7 @@ try {
     bundle: true,
     sourcemap: dev,
     format: 'esm',
-    target: 'esnext',
+    target: 'es2017',
     define: {},
     watch: process.argv.includes('--watch') || process.argv.includes('-w') ? { onRebuild } : false,
     minify: !dev,

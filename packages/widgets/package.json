@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "AEM Franklin Figma widgets",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "type": "module",
   "scripts": {
     "build": "node build.mjs",
