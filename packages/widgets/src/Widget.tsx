@@ -21,6 +21,8 @@ const {
 export default function Widget() {
   const widgetId = useWidgetId();
   const [nodeId, _] = useSyncedState<string>("nodeId", undefined);
+  const [configuring, setConfiguring] = useSyncedState<boolean>("configuring", false);
+  const [previewing, setPreviewing] = useSyncedState<boolean>("previewing", false);
   const [nodeType, __] = useSyncedState<'PAGE'|'FORM'>("nodeType", undefined);
 
   const recenter = () => {
@@ -52,6 +54,11 @@ export default function Widget() {
     if(typeof nodeId === 'string') {
       recenter();
     }
+
+    MessageBus.once('ui:close', () => {
+      console.log('widget setting configuring to false..');
+      setConfiguring(false);
+    });
   });
 
   const setupPages = async () => {
@@ -68,17 +75,26 @@ export default function Widget() {
   }
 
   const configure = () => {
-    figma.showUI(__uiFiles__['ui']);
-    const remove = MessageBus.on('ui:ready', () => {
-      console.log('ui ready!');
-      MessageBus.send('ui:init', { nodeId, nodeType, uiType: 'config' });
-      remove();
+    setConfiguring(true);
+    const widgetNode = figma.getNodeById(widgetId) as WidgetNode;
+    figma.showUI(__uiFiles__['ui'], {
+      title: `Configure ${nodeType === 'FORM' ? 'form' : 'page'} (AEM Franklin)`,
+      position: { 
+        x: widgetNode.x + widgetNode.width + 10, 
+        y: widgetNode.y + 10
+      },
     });
+    MessageBus.once('ui:ready', () => {
+      MessageBus.send('ui:init', { nodeId, nodeType, uiType: 'config' });
+    });
+
     return new Promise((resolve) => undefined);
   }
 
   const preview = () => {
-
+    setPreviewing(true);
+    // TODO: preview
+    setPreviewing(false);
   }
 
   return (
@@ -111,8 +127,8 @@ export default function Widget() {
                 direction={'vertical'}
                 spacing={8}
                 horizontalAlignItems='center'>
-                <Button variant='cta' icon={PreviewIcon} onClick={preview}>Preview</Button>
-                <Button variant='secondary' icon={SettingsIcon} onClick={configure}>Configure</Button>
+                <Button variant='cta' disabled={previewing} icon={PreviewIcon} onClick={preview}>Preview</Button>
+                <Button variant='primary' disabled={configuring} icon={SettingsIcon} onClick={configure}>Configure</Button>
               </AutoLayout>
 
           </AutoLayout>

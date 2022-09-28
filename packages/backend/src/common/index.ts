@@ -6,9 +6,9 @@ function attachFigmaListeners() {
     MessageBus.send('currentpage:change', figma.currentPage);
   });
 
-  // figma.on('close', () => {
-  //   MessageBus.send('currentpage:close', figma.currentPage);
-  // });
+  figma.on('close', () => {
+    MessageBus.sendAll('ui:close');
+  });
 
   figma.on('selectionchange', () => {
     const nodes = figma.currentPage.selection.map(({ id, type }) => ({ id, type }));

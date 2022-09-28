@@ -19,7 +19,7 @@ interface VariantStyles extends WidgetJSX.HoverStyle {
   hoverText?: WidgetJSX.HoverStyle;
 }
 
-const STYLES: Record<Variant, VariantStyles> = {
+const STYLES: Record<Variant | 'disabled', VariantStyles> = {
   cta: {
     text: {
       fill: '#ffffff'
@@ -65,7 +65,15 @@ const STYLES: Record<Variant, VariantStyles> = {
     hoverText: {
       fill: '#ffffff'
     }
-  }
+  },
+  disabled: {
+    text: {
+      fill: '#747474f0'
+    },
+    fill: '#74747400',
+    stroke: '#747474f0',
+    hover: {}
+  },
 }
 
 export const Button: FunctionalWidget<ButtonProps> = ({
@@ -75,6 +83,7 @@ export const Button: FunctionalWidget<ButtonProps> = ({
   onClick,
   disabled = false
 }) => {
+  const pVariant: keyof typeof STYLES = disabled ? 'disabled' : variant;
   return (
     <AutoLayout
       padding={8}
@@ -83,10 +92,10 @@ export const Button: FunctionalWidget<ButtonProps> = ({
       height={40}
       cornerRadius={14}
       strokeWidth={2}
-      stroke={STYLES[variant]['stroke']}
-      fill={STYLES[variant]['fill']}
-      hoverStyle={STYLES[variant]['hover']}
-      onClick={disabled ? () => {} : onClick}
+      stroke={STYLES[pVariant]['stroke']}
+      fill={STYLES[pVariant]['fill']}
+      hoverStyle={STYLES[pVariant]['hover']}
+      onClick={disabled ? undefined : onClick}
       >
         <AutoLayout
           width={'fill-parent'}>
@@ -99,7 +108,7 @@ export const Button: FunctionalWidget<ButtonProps> = ({
                 height={20}
                 width={20}
                 positioning="absolute"
-                src={icon((STYLES[variant]['hoverText']?.fill ?? STYLES[variant]['text']?.fill) as string)} 
+                src={icon((STYLES[pVariant]['hoverText']?.fill ?? STYLES[pVariant]['text']?.fill) as string)} 
                 hoverStyle={{opacity: 1}}/> 
               <SVG 
                 x={(330 - 16 - estimateTextWidth(children[0], 20))/2 - 25}
@@ -107,15 +116,15 @@ export const Button: FunctionalWidget<ButtonProps> = ({
                 height={20}
                 width={20}
                 positioning="absolute"
-                src={icon(STYLES[variant]['text'].fill as string)} 
+                src={icon(STYLES[pVariant]['text'].fill as string)} 
                 hoverStyle={{opacity: 0}}/> 
             </>
           : <></>} 
         
           <Text
-            fill={STYLES[variant]['text']['fill']}
+            fill={STYLES[pVariant]['text']['fill']}
             fontSize={20}
-            hoverStyle={STYLES[variant]['hoverText']}
+            hoverStyle={STYLES[pVariant]['hoverText']}
             width={"fill-parent"}
             horizontalAlignText={"center"}>
               {icon ? `${' '.repeat(1)}${children}` : children}

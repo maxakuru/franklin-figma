@@ -108,14 +108,12 @@ class MessageBus {
     }
   }
 
-  private _incomingBackend(message: BaseMessage, props: OnMessageProperties) {
+  private _incomingBackend(message: BaseMessage, props?: OnMessageProperties) {
     // console.log('[MessageBus] _incomingBackend: ', message, props);
-
     if (isPrivateMessage(message)) {
       const { type } = message as BaseMessage<typeof message.type>;
       const { payload } = message as BaseMessage & { payload: PrivatePayloadMap[typeof type] };
       if (type === '__execute__') {
-        console.log('[MessageBus] _incomingBackend() execute: ', payload);
         const { id, fn, args = {} } = payload;
         const scopeFn = new Function('figma', ...Object.keys(args), `return (${fn})(figma);`);
         const evalFn = `(${scopeFn}).call(null, figma, ...${JSON.stringify(Object.values(args))});`;
@@ -208,11 +206,30 @@ class MessageBus {
     this._send(type, payload);
   }
 
-  private _send<T extends MessageType | PrivateMessageType>(type: T, payload: PrivatePayloadMap[T]) {
+  sendAll<T extends MessageType, TPayload extends AnyFunc = MaybeOptionalPayloadFn<T>>(...args: Parameters<TPayload>): void;
+  sendAll<T extends MessageType>(type: T, payload: PayloadMap[T]) {
+    this._send(type, payload);
     if (this.#frontend) {
-      parent.postMessage({ pluginMessage: { type, payload } }, dev ? '*' : '/');
+      this._incomingFrontend({ data: { pluginMessage: { type, payload } } });
     } else {
-      figma.ui.postMessage({ type, payload }, { origin: dev ? '*' : '/' });
+      this._incomingBackend({ type, payload });
+    }
+  }
+
+  private _send<T extends MessageType | PrivateMessageType>(type: T, payload: PrivatePayloadMap[T]) {
+    try {
+      if (this.#frontend) {
+        parent.postMessage({ pluginMessage: { type, payload } }, dev ? '*' : '/');
+      } else {
+        figma.ui.postMessage({ type, payload }, { origin: dev ? '*' : '/' });
+      }
+    } catch (e) {
+      if (typeof e === 'object' && typeof (e as any).message === 'string' && (e as any).message.includes('No UI to send a message to')) {
+        console.error('[MessageBus] Error, UI is closed during send: ', this.#frontend);
+        this._incomingBackend({ type: 'ui:close', payload: undefined }, undefined);
+      } else {
+        console.error('[MessageBus] Error sending message: ', e);
+      }
     }
   }
 
