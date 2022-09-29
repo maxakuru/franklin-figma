@@ -1,5 +1,5 @@
 import { Widget } from '@franklin-figma/widgets';
-import MessageBus from '@franklin-figma/messages';
+import MessageBus, { serialize } from '@franklin-figma/messages';
 
 function attachFigmaListeners() {
   figma.on('currentpagechange', () => {
@@ -11,8 +11,24 @@ function attachFigmaListeners() {
   });
 
   figma.on('selectionchange', () => {
-    const nodes = figma.currentPage.selection.map(({ id, type }) => ({ id, type }));
+    const nodes = figma.currentPage.selection.map((n) => {
+      const serialized = serialize(n);
+      let cur = n;
+      let curSer = serialized;
+      while (cur.parent) {
+        (curSer as any).parent = { id: cur.parent.id };
+
+        cur = cur.parent as any;
+        curSer = curSer.parent as any;
+      }
+      return serialized;
+    });
     MessageBus.send('selection:change', { nodes });
+  });
+
+  figma.on('drop', (e: DropEvent) => {
+    console.log('figma drop event: ', e);
+    return true;
   });
 }
 

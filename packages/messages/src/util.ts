@@ -1,12 +1,12 @@
 import type { BaseMessage, PrivateMessageType } from "./MessageBus";
 
-export function serialize(o: unknown): unknown {
+export function serialize<T>(o: T): T {
   if (typeof o !== 'object' || o === null) {
     return o;
   }
 
   if (Array.isArray(o)) {
-    return o.map(serialize);
+    return o.map(serialize) as T;
   }
 
   const proto = Object.getPrototypeOf(o);

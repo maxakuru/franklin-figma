@@ -1,56 +1,41 @@
 import React, { useCallback, useEffect, useState } from "react";
 import MessageBus from '@franklin-figma/messages';
+import { ViewId } from "./views/ids";
+import { observer } from 'mobx-react-lite';
+import { useRootStore } from "./state/provider";
+import View from "./views";
 
-
-
-const App = () => {
-    const [loading, setLoading] = useState(true);
-    const [uiType, setUiType] = useState<'config'>();
-    const [nodeType, setNodeType] = useState<'PAGE'|'FORM'>();
-    const [nodeId, setNodeId] = useState<string>();
-    const [selectedNodes, setSelectedNodes] = useState<SceneNode[]>();
+const App = observer(() => {
+    const store = useRootStore();
 
     useEffect(() => {
+        console.log('[ui/App] render');
         MessageBus.once('ui:init', async (payload) => {
-            const { 
-                uiType: pUiType, 
-                nodeType: pNodeType, 
-                nodeId: pNodeId 
+            console.log('[ui/App] init');
+
+            const {
+                uiType, 
+                nodeType, 
+                nodeId
             } = payload;
-            const [node, selectedNodes] = await MessageBus.execute((figma) => {
-                return [figma.getNodeById(pNodeId), figma.currentPage.selection];
-            }, { pNodeId });
 
-            console.log('[UI] initialized - node, selectedNodes: ', node, selectedNodes);
-
-            setSelectedNodes(selectedNodes as SceneNode[]);
-            setNodeType(pNodeType);
-            setUiType(pUiType);
-            setNodeId(pNodeId);
-            setLoading(false);
+            store.setNodeId(nodeId);
+            store.setViewType(uiType);
+            store.setNodeType(nodeType);
+            store.setInitialized();
         });
         MessageBus.send('ui:ready');
-
-        MessageBus.on('selection:change', ({nodes}) => {
-            setSelectedNodes(nodes);
-        });
     }, []);
 
     return(<>
-        <h1>{loading ? 'Loading...' : uiType}</h1>
-        <p>{nodeType} ({nodeId})</p>
-        { loading || !selectedNodes || !selectedNodes.length 
-            ? <p>Select a node to configure it!</p> 
-            : selectedNodes.map((node) => {
-                return (
-                    <React.Fragment key={node.id}>
-                        <p>Selected: {node.name} ({node.id})</p>
-                        <p>Type: ({node.type})</p>
-                    </React.Fragment>
-                );
-            })
+        <h1>{store.viewType}</h1>
+        {
+            (!store.ready || !store.viewType || !store.viewReady) && <>Loading...</>
+        }
+        {
+            store.ready && store.viewType && <View type={store.viewType}/>
         }
     </>)
-};
+});
 
 export default App;

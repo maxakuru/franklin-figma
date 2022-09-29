@@ -40,12 +40,12 @@ export interface PayloadMap extends AnyPayloadMap {
     uiType: 'config';
     nodeType: 'PAGE' | 'FORM';
     nodeId: string;
+  } | {
+    uiType: 'settings';
+    nodeType?: 'PAGE' | 'FORM';
+    nodeId?: string;
   };
-  'ui:close': {
-    uiType: 'config';
-    nodeType: 'PAGE' | 'FORM';
-    nodeId: string;
-  };
+  'ui:close': undefined;
 }
 
 /** @private */
@@ -74,9 +74,9 @@ interface PrivatePayloadMap extends AnyPrivatePayloadMap, PayloadMap {
 }
 
 /** @private */
-type MaybeOptionalPayloadFn<T extends MessageType> = PayloadMap[T] extends undefined
-  ? (type: T, payload?: undefined) => void
-  : (type: T, payload?: PayloadMap[T]) => void;
+export type MaybeOptionalPayloadFn<T extends MessageType> = PayloadMap[T] extends undefined
+  ? (payload?: undefined) => void
+  : (payload: PayloadMap[T]) => void;
 
 const dev = globalThis.DEV;
 
@@ -96,8 +96,16 @@ class MessageBus {
   #execPromises: Record<number, [Promise<any>, (ret: any) => void, (rej: any) => void]> = {};
 
   constructor() {
-    this.#frontend = globalThis.UI || globalThis.WIDGET;
+    this.#frontend = globalThis.UI || globalThis.WIDGET || typeof figma === 'undefined';
     this._connect();
+  }
+
+  public get isFrontend(): boolean {
+    return this.#frontend;
+  }
+
+  public get isBackend(): boolean {
+    return !this.#frontend;
   }
 
   private _connect() {
@@ -108,52 +116,74 @@ class MessageBus {
     }
   }
 
+  /**
+   * Handle an incoming internal message on the backend.
+   */
+  private _incomingBackendInternal(message: BaseMessage<PrivateMessageType>): void {
+    const { type } = message as BaseMessage<typeof message.type>;
+    const { payload } = message as BaseMessage & { payload: PrivatePayloadMap[typeof type] };
+    if (type === '__execute__') {
+      const { id, fn, args = {} } = payload;
+      const scopeFn = new Function('figma', ...Object.keys(args), `return (${fn})(figma);`);
+      const evalFn = `(${scopeFn}).call(null, figma, ...${JSON.stringify(Object.values(args))});`;
+      const evalRet = geval(evalFn);
+
+      if (typeof evalRet === 'object' && typeof evalRet.then === 'function') {
+        evalRet.then((ret: any) => {
+          this._sendExecute({ id, ret: serialize(ret) });
+        }).catch((error: any) => {
+          this._sendExecute({ id, error });
+        });
+      } else {
+        this._sendExecute({ id, ret: serialize(evalRet) });
+      }
+    }
+  }
+
+  /**
+   * Handle an incoming message on the backend.
+   */
   private _incomingBackend(message: BaseMessage, props?: OnMessageProperties) {
     // console.log('[MessageBus] _incomingBackend: ', message, props);
     if (isPrivateMessage(message)) {
-      const { type } = message as BaseMessage<typeof message.type>;
-      const { payload } = message as BaseMessage & { payload: PrivatePayloadMap[typeof type] };
-      if (type === '__execute__') {
-        const { id, fn, args = {} } = payload;
-        const scopeFn = new Function('figma', ...Object.keys(args), `return (${fn})(figma);`);
-        const evalFn = `(${scopeFn}).call(null, figma, ...${JSON.stringify(Object.values(args))});`;
-        const evalRet = geval(evalFn);
-
-        if (typeof evalRet === 'object' && typeof evalRet.then === 'function') {
-          evalRet.then((ret: any) => {
-            this._sendExecute({ id, ret: serialize(ret) });
-          }).catch((error: any) => {
-            this._sendExecute({ id, error });
-          });
-        } else {
-          this._sendExecute({ id, ret: serialize(evalRet) });
-        }
-
-      }
+      this._incomingBackendInternal(message);
     } else {
       this._incoming(message as BaseMessage<MessageType>);
     }
   }
 
+  /**
+   * Handle an incoming internal message on the frontend.
+   */
+  private _incomingFrontendInternal(message: BaseMessage<PrivateMessageType>): void {
+    if (message.type === '__execute__') {
+      const { id, ret, error } = message.payload as { id: number; ret: any; error: any; };
+      const [_, resolve, reject] = this.#execPromises[id];
+      if (error) {
+        reject(error);
+      } else {
+        resolve(ret);
+      }
+      delete this.#execPromises[id];
+    }
+  }
+
+  /**
+   * Handle an incoming message on the frontend.
+   */
   private _incomingFrontend({ data }: { data: { pluginMessage: BaseMessage } }) {
     // console.log('[MessageBus] _incomingFrontend() data: ', data);
     const { pluginMessage: message } = data;
     if (isPrivateMessage(message)) {
-      if (message.type === '__execute__') {
-        const { id, ret, error } = message.payload as { id: number; ret: any; error: any; };
-        const [_, resolve, reject] = this.#execPromises[id];
-        if (error) {
-          reject(error);
-        } else {
-          resolve(ret);
-        }
-        delete this.#execPromises[id];
-      }
+      this._incomingFrontendInternal(message);
     } else {
       this._incoming(message as BaseMessage<MessageType>);
     }
   }
 
+  /**
+   * Common incoming message for public messages to be forwarded to listeners.
+   */
   private _incoming(message: BaseMessage<MessageType>) {
     // console.log('[MessageBus] _incoming() message: ', message);
     if (!message.type) {
@@ -181,6 +211,13 @@ class MessageBus {
     this._send('__execute__', payload);
   }
 
+  /**
+   * Execute some function on the backend.
+   * 
+   * @param fn function to be executed
+   * @param args additional args (named) to add to the scope of execution
+   * @returns promise resolving to whatever is returned from the exec fn
+   */
   execute<
     TFunc extends ExecFunc,
     TRet = ReturnType<TFunc>
@@ -201,12 +238,19 @@ class MessageBus {
     return prom as Promise<TRet>;
   }
 
-  send<T extends MessageType, TPayload extends AnyFunc = MaybeOptionalPayloadFn<T>>(...args: Parameters<TPayload>): void;
+  /**
+   * Send a message to the other "side".
+   */
+  send<T extends MessageType, TPayload extends AnyFunc = MaybeOptionalPayloadFn<T>>(type: T, ...args: Parameters<TPayload>): void;
   send<T extends MessageType>(type: T, payload: PayloadMap[T]) {
     this._send(type, payload);
   }
 
-  sendAll<T extends MessageType, TPayload extends AnyFunc = MaybeOptionalPayloadFn<T>>(...args: Parameters<TPayload>): void;
+  /**
+   * Send a message to the other "side" 
+   * and call all listeners for that type on current "side".
+   */
+  sendAll<T extends MessageType, TPayload extends AnyFunc = MaybeOptionalPayloadFn<T>>(type: T, ...args: Parameters<TPayload>): void;
   sendAll<T extends MessageType>(type: T, payload: PayloadMap[T]) {
     this._send(type, payload);
     if (this.#frontend) {
@@ -233,6 +277,9 @@ class MessageBus {
     }
   }
 
+  /**
+   * Set a handler that removes itself after one call.
+   */
   once<T extends MessageType>(type: T, handler: MessageHandler<T>): void {
     let off: OffFunction;
     const wrap = (payload: PayloadMap[T]) => {
@@ -242,6 +289,9 @@ class MessageBus {
     off = this.on(type, wrap);
   }
 
+  /**
+   * Add a message listener
+   */
   on(type: '*', handler: AllMessagesHandler): OffFunction;
   on<T extends MessageType>(type: T, handler: MessageHandler<T>): OffFunction;
   on<

@@ -1,11 +1,9 @@
-import MessageBus from '@franklin-figma/messages';
+import MessageBus, { AnyFunc } from '@franklin-figma/messages';
 import { Button } from './components';
-import { findAncestor, sleep } from './utils';
+import { findAncestor, clamp } from './utils';
 import GridIcon from './assets/icons/grid';
 import SettingsIcon from './assets/icons/settings';
 import PreviewIcon from './assets/icons/preview';
-
-
 
 const { widget } = figma;
 const { 
@@ -21,8 +19,7 @@ const {
 export default function Widget() {
   const widgetId = useWidgetId();
   const [nodeId, _] = useSyncedState<string>("nodeId", undefined);
-  const [configuring, setConfiguring] = useSyncedState<boolean>("configuring", false);
-  const [previewing, setPreviewing] = useSyncedState<boolean>("previewing", false);
+  const [lock, setLock] = useSyncedState<false | 'previewing' | 'configuring'>("lock", false);
   const [nodeType, __] = useSyncedState<'PAGE'|'FORM'>("nodeType", undefined);
 
   const recenter = () => {
@@ -32,23 +29,72 @@ export default function Widget() {
     widgetNode.y = rootNode.y + rootNode.height;
   }
 
-  if(nodeId) {
-    usePropertyMenu(
-      [
-        {
-          tooltip: 'Recenter',
-          propertyName: 'recenter',
-          itemType: 'action',
-          icon: GridIcon("#fff")
-        }
-      ],
-      (e) => {
-        if(e.propertyName === 'recenter') {
-          recenter();
-        }
-      },
-    )
+  const lockGuard = <T extends AnyFunc>(fn: T): T => {
+    return ((...args) => {
+      if(lock) {
+        figma.notify(`Someone is already ${lock} this ${nodeType.toLowerCase()}.`, { error: true });
+      } else {
+        return fn.apply(null, args)
+      }
+    }) as T;
   }
+
+  const openSettings = () => {
+    const { bounds, zoom } = figma.viewport;
+    const height = Math.round(clamp(bounds.height * zoom * 0.4, 700, 1080));
+    const width = Math.round(clamp(bounds.width * zoom * 0.4, 1000, 1920));
+    const x = Math.round(bounds.x * zoom + (bounds.width * zoom - width)/2) * 1/zoom;
+    const y = Math.round(bounds.y * zoom + (bounds.height * zoom - height)/2) * 1/zoom;
+
+    figma.showUI(__uiFiles__['ui'], {
+      title: `Settings (AEM Franklin)`,
+      position: {
+        x,
+        y
+      },
+      height,
+      width
+    });
+    MessageBus.once('ui:ready', () => {
+      MessageBus.send('ui:init', { nodeId, nodeType, uiType: 'settings' });
+    });
+
+    return new Promise<void>((resolve) => undefined);
+  }
+
+  const menuItems: WidgetPropertyMenuItem[] = [
+    {
+      tooltip: 'Settings',
+      propertyName: 'settings',
+      itemType: 'action',
+      icon: SettingsIcon("#fff")
+    }
+  ];
+
+  if(nodeId) {
+    menuItems.push({
+      itemType: 'separator'
+    }, {
+      tooltip: 'Recenter',
+      propertyName: 'recenter',
+      itemType: 'action',
+      icon: GridIcon("#fff")
+    });
+  }
+
+  usePropertyMenu(
+    menuItems,
+    (e) => {
+      switch(e.propertyName) {
+        case 'recenter':
+          return recenter();
+        case 'settings':
+          return openSettings();
+        default:
+          console.warn('[Widget] Unhandled widget property event: ', e);
+      }
+    }
+  );
 
   useEffect(() => {    
     if(typeof nodeId === 'string') {
@@ -56,8 +102,8 @@ export default function Widget() {
     }
 
     MessageBus.once('ui:close', () => {
-      console.log('widget setting configuring to false..');
-      setConfiguring(false);
+      console.log('[Widget] UI closed, no longer configuring.');
+      setLock(false);
     });
   });
 
@@ -74,28 +120,35 @@ export default function Widget() {
 
   }
 
-  const configure = () => {
-    setConfiguring(true);
+  const configure = lockGuard(() => {
+    setLock('configuring');
     const widgetNode = figma.getNodeById(widgetId) as WidgetNode;
+    const focusNode = figma.getNodeById(nodeId) as SceneNode;
+    figma.viewport.scrollAndZoomIntoView([focusNode, widgetNode]);
+    const { bounds, zoom } = figma.viewport;
+    const height = Math.round(clamp(bounds.height * zoom * 0.6, 700, 1080));
+    const width = Math.round(clamp(bounds.width * zoom * 0.3, 300, 700));
+
     figma.showUI(__uiFiles__['ui'], {
       title: `Configure ${nodeType === 'FORM' ? 'form' : 'page'} (AEM Franklin)`,
       position: { 
-        x: widgetNode.x + widgetNode.width + 10, 
-        y: widgetNode.y + 10
+        x: focusNode.x + focusNode.width + 10, 
+        y: focusNode.y
       },
+      width, 
+      height
     });
     MessageBus.once('ui:ready', () => {
       MessageBus.send('ui:init', { nodeId, nodeType, uiType: 'config' });
     });
 
     return new Promise((resolve) => undefined);
-  }
+  });
 
-  const preview = () => {
-    setPreviewing(true);
-    // TODO: preview
-    setPreviewing(false);
-  }
+  const preview = lockGuard(() => {
+    setLock('previewing');
+    setLock(false);
+  });
 
   return (
     <AutoLayout 
@@ -121,14 +174,14 @@ export default function Widget() {
               direction={'vertical'}
               width={'fill-parent'}
               horizontalAlignItems='start'>
-              <Text fill={'#a0a0a0'}>AEM Franklin - {nodeType === 'FORM' ? 'Form' : 'Page'}</Text>
+              <Text fill={'#a0a0a0'}>{nodeType === 'FORM' ? 'Form' : 'Page'}</Text>
               <AutoLayout
                 width={'fill-parent'}
                 direction={'vertical'}
                 spacing={8}
                 horizontalAlignItems='center'>
-                <Button variant='cta' disabled={previewing} icon={PreviewIcon} onClick={preview}>Preview</Button>
-                <Button variant='primary' disabled={configuring} icon={SettingsIcon} onClick={configure}>Configure</Button>
+                <Button variant='cta' disabled={!!lock} icon={PreviewIcon} onClick={preview}>Preview</Button>
+                <Button variant='primary' disabled={!!lock} icon={SettingsIcon} onClick={configure}>Configure</Button>
               </AutoLayout>
 
           </AutoLayout>

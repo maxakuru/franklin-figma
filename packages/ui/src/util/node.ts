@@ -1,4 +1,3 @@
-
 export function findAncestor<T extends SceneNode>(
   node: SceneNode,
   predicate: (node: T) => boolean
