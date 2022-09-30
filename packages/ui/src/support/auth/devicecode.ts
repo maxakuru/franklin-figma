@@ -96,7 +96,6 @@ function doFetch(
     url.search = params.toString();
   }
 
-  console.debug('[auth] doFetch() url: ', url.toString());
   return cancelableFetch(url.toString(), init);
 }
 

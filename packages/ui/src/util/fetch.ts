@@ -1,4 +1,5 @@
 
+import MessageBus from '@franklin-figma/messages';
 import { ProgressContext, ErrorWithMessage } from '../types';
 import { makePublicError } from './error';
 import { sleep } from './object';
@@ -103,6 +104,9 @@ export function cancelableFetch(
   const controller = new AbortController();
   const { signal, abort } = controller;
 
+  // const promise = MessageBus.execute(() => {
+  //   return fetch(url, Object.assign({}, init));
+  // }, { url, init });
   const promise = _cancelableFetch(
     url,
     {
@@ -111,8 +115,8 @@ export function cancelableFetch(
     },
   ) as CancelablePromise<Response>;
 
-  promise.cancel = abort;
-  return promise;
+  (promise as any).cancel = abort;
+  return promise as any;
 }
 
 async function _cancelableFetch(

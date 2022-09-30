@@ -58,18 +58,10 @@ export async function authenticate(
 ): Promise<AuthData> {
   let code: string;
   try {
-    console.log('trace 1');
     const resp = await doFetch(provider, '/session');
-    console.log('trace 2');
-
     const { url, id } = await resp.json();
-    console.log('trace 3');
-
     openBrowser(url);
-    console.log('trace 4');
-
     code = await pollForCode(provider, id, ctx);
-    console.log('trace 5');
   } catch (e) {
     throw setErrorMessage(e, 'Failed to authenticate.');
   }

@@ -9,6 +9,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 configEnv({ path: path.resolve(__dirname, './.public.env') });
 configEnv({ path: path.resolve(__dirname, './.env') });
 
+console.log('process.env: ', process.env);
+
 process.env.NODE_ENV ??= 'development';
 const dev = process.env.NODE_ENV === 'development';
 const watch = process.argv.includes('--watch') || process.argv.includes('-w');
@@ -83,8 +85,8 @@ const variableEnvVars = (env) => {
 
   return {
     'process.env.NODE_ENV': JSON.stringify(env),
-    'process.env.AUTH_ENDPOINT': JSON.stringify(authEndpoint),
-    'process.env.UI_ENDPOINT': JSON.stringify(uiEndpoint),
+    'process.env.AUTH_ENDPOINT': JSON.stringify(process.env.AUTH_ENDPOINT ?? authEndpoint),
+    'process.env.UI_ENDPOINT': JSON.stringify(process.env.UI_ENDPOINT ?? uiEndpoint),
   };
 };
 
@@ -96,7 +98,7 @@ try {
     watch: watch ? { onRebuild } : false,
     target: 'es2017',
     define: {
-      'process.env.OAUTH_FLOW': JSON.stringify(process.env.OAUTH_FLOW ?? 'device_code'),
+      'process.env.OAUTH_FLOW': JSON.stringify(process.env.OAUTH_FLOW ?? 'access_code'),
       'process.env.MICROSOFT_TENANT_ID': JSON.stringify(process.env.MICROSOFT_TENANT_ID),
       'process.env.MICROSOFT_CLIENT_ID': JSON.stringify(process.env.MICROSOFT_CLIENT_ID),
       'process.env.GOOGLE_CLIENT_ID': JSON.stringify(process.env.GOOGLE_CLIENT_ID),

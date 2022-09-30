@@ -5,6 +5,8 @@ import { observer } from 'mobx-react-lite';
 import { useRootStore } from "./state/provider";
 import View from "./views";
 import { Flex, ProgressCircle } from "@adobe/react-spectrum";
+// import { Progress } from './overlays/progress';
+// import root from './state/stores';
 
 import './App.css';
 

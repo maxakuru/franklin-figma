@@ -10,6 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
+import type * as React from 'react';
 import {
   makeObservable,
   observable,
@@ -21,7 +22,7 @@ import { AnyOk } from '../../types/util';
 import { AuthStore } from './auth.store';
 import { SelectionStore } from './selection.store';
 import { SettingsStore } from './settings.store';
-import { BaseMessage, MessageType, PayloadMap } from '@franklin-figma/messages';
+import { PayloadMap } from '@franklin-figma/messages';
 
 class _RootStore {
   ready = false;
@@ -38,6 +39,8 @@ class _RootStore {
 
   theme: 'light' | 'dark' = undefined;
 
+  overlayStack: React.ReactElement[] = [];
+
   /**
    * Promise that resolves when initialization is complete
    */
@@ -48,7 +51,6 @@ class _RootStore {
     this.selectionStore = new SelectionStore(this);
     this.settingsStore = new SettingsStore(this);
 
-
     makeObservable(this, {
       ready: observable,
       viewType: observable,
@@ -57,6 +59,7 @@ class _RootStore {
       viewReady: observable,
       initPayload: observable,
       theme: observable,
+      overlayStack: observable,
 
       _init: action,
       reset: action,
@@ -65,7 +68,8 @@ class _RootStore {
       setViewType: action,
       setViewReady: action,
       setInitPayload: action,
-      setTheme: action
+      setTheme: action,
+      pushOverlay: action
     });
 
     this._initPromise = this._init();
@@ -73,6 +77,14 @@ class _RootStore {
 
   get whenReady(): Promise<void> {
     return this._initPromise;
+  }
+
+  pushOverlay(overlay: React.ReactElement) {
+    this.overlayStack.push(overlay);
+  }
+
+  popOverlay() {
+    this.overlayStack.pop();
   }
 
   setTheme(theme: 'dark' | 'light') {

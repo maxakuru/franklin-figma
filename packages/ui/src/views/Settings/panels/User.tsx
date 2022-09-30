@@ -5,17 +5,19 @@ import { observer } from 'mobx-react-lite';
 import { useRootStore } from '../../../state/provider';
 import { Edit } from '../../../spectrumIcons';
 
+import { connect } from '../../../actions/auth';
+
 export const UserPanel = observer(() => {
   const { authStore, settingsStore } = useRootStore();
 
   return (
     <>
       <ButtonGroup>
-        <ActionButton>
+        <ActionButton onPress={connect('microsoft')}>
           <Edit />
           <Text>Connect Microsoft</Text>
         </ActionButton>
-        <ActionButton>
+        <ActionButton onPress={connect('google')}>
           <Edit />
           <Text>Connect Google</Text>
         </ActionButton>

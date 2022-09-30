@@ -8,7 +8,7 @@ export * from './types';
 
 export const OAUTH_FLOWS: OAuthFlow[] = ['device_code', 'access_code'];
 
-const flow: OAuthFlow = (process.env.OAUTH_FLOW ?? 'device_code') as OAuthFlow;
+const flow: OAuthFlow = (process.env.OAUTH_FLOW ?? 'access_code') as OAuthFlow;
 
 if (!OAUTH_FLOWS.includes(flow)) {
   throw makePublicError(`Build Error! Invalid OAuth flow: ${flow}. Supported types: ${OAUTH_FLOWS.join(', ')}.`);
