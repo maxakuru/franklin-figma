@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useEffect, useState } from "react"
 import { RootStoreProvider } from "./state/provider"
 import { AnyOk } from "./types";
 import {
@@ -30,10 +30,16 @@ class ErrorBoundary extends React.Component<AnyOk> {
 export default ({
   children
 }: { children: React.ReactElement }) => {
+  const [theme, setTheme] = useState<'dark'|'light'>('light');
+  useEffect(() => {
+    if(document.documentElement.classList.contains('figma-dark')) {
+      setTheme('dark');
+    }
+  }, []);
   return (
     <ErrorBoundary>
       <RootStoreProvider>
-        <SpectrumProvider theme={defaultTheme} scale='medium' colorScheme="light">
+        <SpectrumProvider theme={defaultTheme} scale='medium' colorScheme={theme}>
           {children}
         </SpectrumProvider>
       </RootStoreProvider>

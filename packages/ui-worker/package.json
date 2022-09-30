@@ -1,0 +1,22 @@
+{
+  "name": "@franklin-figma/ui-worker",
+  "version": "1.0.0",
+  "description": "AEM Franklin Figma Plugin - worker",
+  "main": "dist/api/index.js",
+  "type": "module",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "node build.mjs",
+    "dev": "npm run build -- -w",
+    "types": "tsc --emitDeclarationOnly --declaration --project tsconfig.types.json"
+  },
+  "author": "",
+  "license": "",
+  "devDependencies": {
+    "tslib": "2.4.0"
+  },
+  "dependencies": {
+    "@franklin-figma/messages": "^1.0.0",
+    "esbuild": "0.15.7"
+  }
+}

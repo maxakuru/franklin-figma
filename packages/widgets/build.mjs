@@ -2,7 +2,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { build } from 'esbuild';
 import fs from 'fs/promises';
-import { execSync } from 'child_process'
+import { exec, execSync } from 'child_process'
 
 // import { config } from 'dotenv';
 
@@ -15,20 +15,24 @@ process.env.NODE_ENV ??= 'development';
 const dev = process.env.NODE_ENV === 'development';
 const watch = process.argv.includes('--watch') || process.argv.includes('-w');
 
-const emitDeclaration = () => {
-  try {
-    execSync('tsc --emitDeclarationOnly --declaration --project tsconfig.json');
-  } catch(e) {
-    console.error('emitDeclaration failed: ', e);
-    throw e;
-  }
+const emitDeclaration = async () => {
+  await new Promise((resolve, reject) => {
+    exec('tsc --emitDeclarationOnly --declaration --project tsconfig.json', (err, stdout) => {
+      if(err) {
+        console.error('emitDeclaration failed: ', stdout);
+        reject(stdout);
+      } else {
+        resolve(stdout);
+      }
+    });
+  });
 } 
 
 const onRebuild = async (error, result) => {
   if (error) console.error('watch build failed: ', error);
   else if (result.warnings.length) console.warn(`watch build succeeded with ${result.warnings.length} warnings: `, result);
   else {
-    emitDeclaration();
+    await emitDeclaration();
     console.debug('watch build succeeded');
   }
 };
@@ -53,7 +57,7 @@ try {
     tsconfig: path.resolve(__dirname, './tsconfig.json'),
   });
 
-  emitDeclaration();
+  await emitDeclaration();
   
 } catch {
   process.exitCode = 1;

@@ -50,18 +50,11 @@ export class SelectionStore extends BaseStore {
     if (!this.root.nodeId) {
       return this.nodes;
     }
-    console.log('unfiltered: ', this.nodes);
-    const filtered = this.nodes.filter((node) => !!findAncestor(node, (parent => parent.id === this.root.nodeId)));
-    console.log('filtered: ', filtered);
-
-    return filtered;
+    return this.nodes.filter((node) => !!findAncestor(node, (parent => parent.id === this.root.nodeId)));
   }
 
   setNodes(nodes: SceneNode[]) {
-    console.log('setNodes: ', nodes);
-    runInAction(() => {
-      this.nodes = nodes;
-    });
+    this.nodes = nodes;
   }
 
   /**

@@ -1,4 +1,6 @@
 import MessageBus, { AnyFunc } from '@franklin-figma/messages';
+import { spawn } from '@franklin-figma/ui-worker';
+
 import { Button } from './components';
 import { findAncestor, clamp } from './utils';
 import GridIcon from './assets/icons/grid';
@@ -13,13 +15,14 @@ const {
   useSyncedState, 
   useWidgetId, 
   usePropertyMenu,
-  Text
+  Text,
+  waitForTask
 } = widget;
 
 export default function Widget() {
   const widgetId = useWidgetId();
   const [nodeId, _] = useSyncedState<string>("nodeId", undefined);
-  const [lock, setLock] = useSyncedState<false | 'previewing' | 'configuring'>("lock", false);
+  const [lock, setLock] = useSyncedState<false | 'initializing' | 'previewing' | 'configuring'>("lock", false);
   const [nodeType, __] = useSyncedState<'PAGE'|'FORM'>("nodeType", undefined);
 
   const recenter = () => {
@@ -41,7 +44,7 @@ export default function Widget() {
 
   const openSettings = () => {
     const { bounds, zoom } = figma.viewport;
-    const height = Math.round(clamp(bounds.height * zoom * 0.4, 700, 1080));
+    const height = Math.round(clamp(bounds.height * zoom * 0.4, 600, 1080));
     const width = Math.round(clamp(bounds.width * zoom * 0.4, 1000, 1920));
     const x = Math.round(bounds.x * zoom + (bounds.width * zoom - width)/2) * 1/zoom;
     const y = Math.round(bounds.y * zoom + (bounds.height * zoom - height)/2) * 1/zoom;
@@ -53,13 +56,32 @@ export default function Widget() {
         y
       },
       height,
-      width
+      width,
+      themeColors: true
     });
     MessageBus.once('ui:ready', () => {
       MessageBus.send('ui:init', { nodeId, nodeType, uiType: 'settings' });
     });
 
     return new Promise<void>((resolve) => undefined);
+  }
+
+  /**
+   * Setup initial document settings
+   */
+  const introDoc = lockGuard(async () => {
+    console.log('introDoc...');
+
+    setLock('initializing');
+    setLock(false);
+  });
+
+  /**
+   * Setup initial user settings
+   * Does not lock the document, since it doesn't result in changes to doc itself
+   */
+  const introUser = async () => {
+    console.log('introUser...');
   }
 
   const menuItems: WidgetPropertyMenuItem[] = [
@@ -99,6 +121,24 @@ export default function Widget() {
   useEffect(() => {    
     if(typeof nodeId === 'string') {
       recenter();
+    } else {
+        // if it's the first time using the widget, open settings for them automatically
+        waitForTask((async() => {
+          const newUser = await figma.clientStorage.getAsync('new_user');
+          if(typeof newUser === 'undefined') {
+            // setup new user
+            await introUser();
+            await figma.clientStorage.setAsync('new_document', false);
+          }
+
+          const doc = figma.currentPage;
+          const newDoc = doc.getPluginData('new_document');
+          if(typeof newDoc === 'undefined') {
+            // setup new document
+            await introDoc();
+            doc.setPluginData('new_document', '"false"');
+          }          
+        })());
     }
 
     MessageBus.once('ui:close', () => {
@@ -136,7 +176,8 @@ export default function Widget() {
         y: focusNode.y
       },
       width, 
-      height
+      height,
+      themeColors: true
     });
     MessageBus.once('ui:ready', () => {
       MessageBus.send('ui:init', { nodeId, nodeType, uiType: 'config' });

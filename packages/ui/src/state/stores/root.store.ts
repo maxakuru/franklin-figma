@@ -20,12 +20,13 @@ import type { ViewId } from '../../views/ids';
 import { AnyOk } from '../../types/util';
 import { AuthStore } from './auth.store';
 import { SelectionStore } from './selection.store';
+import { SettingsStore } from './settings.store';
 
 class _RootStore {
   ready = false;
-  initialized = false;
   authStore: AuthStore = undefined;
   selectionStore: SelectionStore = undefined;
+  settingsStore: SettingsStore = undefined;
 
   viewType: ViewId = undefined;
   nodeType?: 'FORM' | 'PAGE' = undefined;
@@ -40,16 +41,16 @@ class _RootStore {
   constructor() {
     this.authStore = new AuthStore(this);
     this.selectionStore = new SelectionStore(this);
+    this.settingsStore = new SettingsStore(this);
+
 
     makeObservable(this, {
       ready: observable,
-      initialized: observable,
       viewType: observable,
       nodeType: observable,
       nodeId: observable,
       viewReady: observable,
 
-      setInitialized: action,
       _init: action,
       reset: action,
       setNodeId: action,
@@ -81,17 +82,14 @@ class _RootStore {
     this.viewReady = ready;
   }
 
-  setInitialized() {
-    this.initialized = true;
-  }
-
   /**
    * Set initial state from storage
    */
   async _init(): Promise<void> {
     await Promise.all([
       this.authStore.init(),
-      this.selectionStore.init()
+      this.selectionStore.init(),
+      this.settingsStore.init()
     ]);
 
     runInAction(() => {
@@ -104,6 +102,7 @@ class _RootStore {
     await Promise.all([
       this.authStore.reset(),
       this.selectionStore.reset(),
+      this.settingsStore.reset()
     ]);
   }
 }

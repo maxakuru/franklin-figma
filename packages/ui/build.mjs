@@ -17,8 +17,11 @@ const watch = process.argv.includes('--watch') || process.argv.includes('-w');
  * @param {string} code 
  * @returns {string}
  */
- const template = (code) => { 
+ const template = (code, styles) => { 
   return `
+<style>
+${styles}
+</style>
 <div id="app"></div>
 <script>
   ${code}
@@ -27,11 +30,18 @@ const watch = process.argv.includes('--watch') || process.argv.includes('-w');
 }
 
 const writeHtml = async () => {
-  const buf = await fs.readFile(path.resolve(__dirname, './dist/index.js'));
+  let buf = await fs.readFile(path.resolve(__dirname, './dist/index.js'));
   const code = buf.toString('utf8');
-  const html = template(code);
+
+  buf = await fs.readFile(path.resolve(__dirname, './dist/index.css'));
+  const styles = buf.toString('utf8');
+
+  const html = template(code, styles);
   await fs.writeFile(path.resolve(__dirname, './dist/index.html'), html, {encoding: 'utf8'});
+
   await fs.unlink(path.resolve(__dirname, './dist/index.js'));
+  await fs.unlink(path.resolve(__dirname, './dist/index.css'));
+
 }
 
 const onRebuild = async (error, result) => {

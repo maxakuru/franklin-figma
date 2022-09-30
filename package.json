@@ -10,6 +10,7 @@
     "dev:ui": "npm run dev -w packages/ui",
     "dev:backend": "npm run dev -w packages/backend",
     "dev:widgets": "npm run dev -w packages/widgets",
+    "dev:ui-worker": "npm run dev -w packages/ui-worker",
     "dev": "concurrently -k \"npm:dev:*\"",
     "lint": "npm run lint --ws --if-present",
     "test": "npm test --ws --if-present"
@@ -23,6 +24,7 @@
     "typescript": "4.8.3"
   },
   "workspaces": [
+    "packages/messages",
     "packages/!(backend|ui|widgets)",
     "packages/widgets",
     "packages/backend",

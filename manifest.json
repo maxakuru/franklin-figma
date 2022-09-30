@@ -10,6 +10,7 @@
   "containsWidget": true,
   "widgetApi": "1.0.0",
   "ui": {
-    "ui": "packages/ui/dist/index.html"
+    "ui": "packages/ui/dist/index.html",
+    "worker": "packages/ui-worker/dist/ui/index.html"
   }
 }
