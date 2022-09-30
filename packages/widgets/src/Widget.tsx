@@ -7,6 +7,8 @@ import GridIcon from './assets/icons/grid';
 import SettingsIcon from './assets/icons/settings';
 import PreviewIcon from './assets/icons/preview';
 
+const TESTING_INTROS = true;
+
 const { widget } = figma;
 const { 
   useEffect,
@@ -42,7 +44,7 @@ export default function Widget() {
     }) as T;
   }
 
-  const openSettings = () => {
+  const openSettings = (panels?: ('node' | 'document' | 'user' | 'global')[]) => {
     const { bounds, zoom } = figma.viewport;
     const height = Math.round(clamp(bounds.height * zoom * 0.4, 600, 1080));
     const width = Math.round(clamp(bounds.width * zoom * 0.4, 1000, 1920));
@@ -60,7 +62,7 @@ export default function Widget() {
       themeColors: true
     });
     MessageBus.once('ui:ready', () => {
-      MessageBus.send('ui:init', { nodeId, nodeType, uiType: 'settings' });
+      MessageBus.send('ui:init', { nodeId, nodeType, uiType: 'settings', panels });
     });
 
     return new Promise<void>((resolve) => undefined);
@@ -70,7 +72,7 @@ export default function Widget() {
    * Setup initial document settings
    */
   const introDoc = lockGuard(async () => {
-    console.log('introDoc...');
+    console.log('[Widget] introDoc...');
 
     setLock('initializing');
     setLock(false);
@@ -81,7 +83,8 @@ export default function Widget() {
    * Does not lock the document, since it doesn't result in changes to doc itself
    */
   const introUser = async () => {
-    console.log('introUser...');
+    console.log('[Widget] introUser...');
+    return openSettings(['user']);
   }
 
   const menuItems: WidgetPropertyMenuItem[] = [
@@ -113,7 +116,7 @@ export default function Widget() {
         case 'settings':
           return openSettings();
         default:
-          console.warn('[Widget] Unhandled widget property event: ', e);
+          console.warn('[Widget] Unhandled menu event: ', e);
       }
     }
   );
@@ -125,7 +128,7 @@ export default function Widget() {
         // if it's the first time using the widget, open settings for them automatically
         waitForTask((async() => {
           const newUser = await figma.clientStorage.getAsync('new_user');
-          if(typeof newUser === 'undefined') {
+          if(typeof newUser === 'undefined' || TESTING_INTROS) {
             // setup new user
             await introUser();
             await figma.clientStorage.setAsync('new_document', false);
@@ -133,7 +136,7 @@ export default function Widget() {
 
           const doc = figma.currentPage;
           const newDoc = doc.getPluginData('new_document');
-          if(typeof newDoc === 'undefined') {
+          if(typeof newDoc === 'undefined' || TESTING_INTROS) {
             // setup new document
             await introDoc();
             doc.setPluginData('new_document', '"false"');

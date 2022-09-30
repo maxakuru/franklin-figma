@@ -1,4 +1,3 @@
-import MessageBus from '@franklin-figma/messages';
 import {
   makeObservable,
   observable,
@@ -11,26 +10,38 @@ import { PanelId } from '../../views/Settings/panels';
 
 export class SettingsStore extends BaseStore {
   enabled: boolean = false;
-  panelIndex: number = undefined;
+  panelId: string = undefined;
 
   constructor(root: RootStore) {
     super(root);
 
     makeObservable(this, {
       enabled: observable,
-      panelIndex: observable,
+      panelId: observable,
       nodePanelEnabled: computed,
+      enabledPanels: computed,
       enable: action,
-      setPanelIndex: action
+      setPanelId: action
     });
   }
 
-  setPanelIndex(index: number) {
-    this.panelIndex = index;
+  setPanelId(id: string) {
+    this.panelId = id;
   }
 
   get nodePanelEnabled() {
     return !!this.root.nodeId;
+  }
+
+  get enabledPanels() {
+    if (typeof (this.root.initPayload as Record<string, unknown>).panels === 'undefined') {
+      const enabled = ['document', 'global', 'user'];
+      if (this.nodePanelEnabled) {
+        enabled.push('node');
+      }
+      return enabled;
+    }
+    return (this.root.initPayload as unknown as Record<string, string[]>).panels;
   }
 
   async enable() {
@@ -44,10 +55,16 @@ export class SettingsStore extends BaseStore {
     //   return figma.currentPage.selection;
     // });
 
-    if (this.nodePanelEnabled) {
-      this.setPanelIndex(PanelId.Node);
-    } else {
-      this.setPanelIndex(PanelId.Document);
+    // prioritized panels
+    const enabled = this.enabledPanels;
+    if (enabled.includes('node')) {
+      this.setPanelId(PanelId.Node);
+    } else if (enabled.includes('document')) {
+      this.setPanelId(PanelId.Document);
+    } else if (enabled.includes('user')) {
+      this.setPanelId(PanelId.User);
+    } else if (enabled.includes('global')) {
+      this.setPanelId(PanelId.Global);
     }
   }
 

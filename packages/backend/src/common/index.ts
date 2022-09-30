@@ -27,8 +27,8 @@ function attachFigmaListeners() {
   });
 
   figma.on('drop', (e: DropEvent) => {
-    console.log('figma drop event: ', e);
-    MessageBus.sendAll('drop:*', e);
+    console.log('[backend] figma drop event: ', e);
+    MessageBus.sendAll('drop:*', e as DropEvent & Record<string, unknown>);
     return true;
   });
 }

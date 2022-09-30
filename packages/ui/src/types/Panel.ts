@@ -1,5 +1,5 @@
 export interface Panel {
-  id: number;
+  id: string;
   name: string;
   children: any;
 }

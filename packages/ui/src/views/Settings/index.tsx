@@ -3,7 +3,7 @@ import MessageBus from '@franklin-figma/messages';
 import { useRootStore } from "../../state/provider";
 import { Flex, Item, TabList, TabPanels, Tabs, View } from "@adobe/react-spectrum";
 import { Panel } from "../../types";
-import panels from "./panels";
+import allPanels from "./panels";
 import { observer } from "mobx-react-lite";
 
 
@@ -11,19 +11,21 @@ import { observer } from "mobx-react-lite";
 const SettingsView: React.FC = observer(() => {
   const store = useRootStore();
   const { settingsStore } = store;
+  const [ panels, setPanels ] = useState<Panel[]>([]);
 
     useEffect(() => {
       console.log('[ui/Settings] initialize');
       (async () => {
         await settingsStore.enable();
+        setPanels(allPanels.filter(panel => settingsStore.enabledPanels.includes(panel.id)));
         store.setViewReady(true);
       })().catch((e) => {
         console.error('[ui/Settings] Failed to initialize: ', e);
       });
     }, []);
 
-    const setIndex = useCallback((i: number) => () => {
-      settingsStore.setPanelIndex(i);
+    const setIndex = useCallback((id: string) => () => {
+      settingsStore.setPanelId(id);
     }, []);
 
     return(
@@ -32,7 +34,7 @@ const SettingsView: React.FC = observer(() => {
             aria-label="Panels"
             items={panels}
             density="compact"
-            selectedKey={settingsStore.panelIndex}
+            selectedKey={settingsStore.panelId}
           >
             <View marginY='size-100'>
               <TabList>

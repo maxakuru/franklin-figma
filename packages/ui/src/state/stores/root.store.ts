@@ -21,6 +21,7 @@ import { AnyOk } from '../../types/util';
 import { AuthStore } from './auth.store';
 import { SelectionStore } from './selection.store';
 import { SettingsStore } from './settings.store';
+import { BaseMessage, MessageType, PayloadMap } from '@franklin-figma/messages';
 
 class _RootStore {
   ready = false;
@@ -32,6 +33,8 @@ class _RootStore {
   nodeType?: 'FORM' | 'PAGE' = undefined;
   nodeId?: string = undefined;
   viewReady: boolean = false;
+
+  initPayload: PayloadMap['ui:init'] = undefined;
 
   /**
    * Promise that resolves when initialization is complete
@@ -50,13 +53,15 @@ class _RootStore {
       nodeType: observable,
       nodeId: observable,
       viewReady: observable,
+      initPayload: observable,
 
       _init: action,
       reset: action,
       setNodeId: action,
       setNodeType: action,
       setViewType: action,
-      setViewReady: action
+      setViewReady: action,
+      setInitPayload: action
     });
 
     this._initPromise = this._init();
@@ -80,6 +85,10 @@ class _RootStore {
 
   setViewReady(ready: boolean) {
     this.viewReady = ready;
+  }
+
+  setInitPayload(payload: PayloadMap['ui:init']) {
+    this.initPayload = payload;
   }
 
   /**

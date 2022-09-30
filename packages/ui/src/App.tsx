@@ -24,6 +24,7 @@ const App = observer(() => {
             store.setNodeId(nodeId);
             store.setViewType(uiType);
             store.setNodeType(nodeType);
+            store.setInitPayload(payload);
         });
         MessageBus.send('ui:ready');
     }, []);
