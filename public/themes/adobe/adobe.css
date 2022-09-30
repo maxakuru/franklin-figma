@@ -1,0 +1,8 @@
+/* Theme Adobe */
+
+:root {
+  --theme-color-accent: #1473E6;
+  --theme-color-gray: #E5E5E5;
+  --theme-color-dark: #000000;
+  --theme-font-family: 'adobe clean';
+}

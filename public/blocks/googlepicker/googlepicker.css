@@ -1,0 +1,11 @@
+.msg {
+  margin: auto;
+}
+
+.msg .valid {
+  color: green;
+}
+
+.msg .error {
+  color: red;
+}

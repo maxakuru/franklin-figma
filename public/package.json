@@ -1,0 +1,15 @@
+{
+  "name": "@franklin-figma/public",
+  "description": "Franklin Figma web UI",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "cd ../.. && hlx up --port 3000",
+    "lint": "eslint .",
+    "clean": "rm -rf scripts/*.min.js",
+    "purge": "npm run clean && rm -rf node_modules"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

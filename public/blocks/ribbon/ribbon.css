@@ -1,0 +1,47 @@
+.ribbon {
+    padding: 0;
+    position: relative;
+    color: var(--theme-color-light);
+    min-height: 10px;
+}
+.ribbon .container > div {
+  max-width: var(--grid-container-width);
+  margin: 0 auto;
+}
+
+.ribbon.light {
+  color: var(--theme-color-dark)
+}
+
+.ribbon.banner {
+    height: 450px;
+}
+.ribbon.center {
+    text-align: center;
+}
+.ribbon .container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.ribbon .background picture {
+  display: block;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+}
+
+.ribbon .background img {
+  display: block;
+  object-fit: cover;
+  height: 100%;
+  width: 100%;
+}
+
+@media screen and (min-width: 1440px) {
+    .ribbon .container {
+        max-width: 1440px;
+    }
+}

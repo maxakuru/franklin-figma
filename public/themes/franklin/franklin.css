@@ -1,0 +1,24 @@
+/* Theme Franklin */
+
+.default-content-wrapper {
+  max-width: 900px;
+  margin: auto;
+  text-align: center;
+  padding: 4rem 0 0;
+}
+
+.default-content-wrapper h2 {
+  margin-bottom: 0;
+}
+
+main .section.dark {
+  background: var(--theme-color-dark);
+  color: var(--theme-color-light);
+}
+
+:root {
+  --theme-color-accent: #1473E6;
+  --theme-color-gray: #E5E5E5;
+  --theme-color-dark: #444;
+  --theme-font-family: 'adobe clean';
+}

@@ -13,7 +13,9 @@
     "dev:ui-worker": "npm run dev -w packages/ui-worker",
     "dev": "concurrently -k \"npm:dev:*\"",
     "lint": "npm run lint --ws --if-present",
-    "test": "npm test --ws --if-present"
+    "test": "npm test --ws --if-present",
+    "clean": "npm run clean --ws --if-present",
+    "purge": "npm run purge --ws --if-present"
   },
   "author": "",
   "license": "",
@@ -28,6 +30,7 @@
     "packages/!(backend|ui|widgets)",
     "packages/widgets",
     "packages/backend",
-    "packages/ui"
+    "packages/ui",
+    "public"
   ]
 }

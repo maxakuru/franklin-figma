@@ -1,0 +1,84 @@
+.headline {
+    padding: 100px 0;
+    position: relative;
+    color: var(--theme-color-light)
+}
+.headline .container > div {
+  max-width: var(--grid-container-width);
+  margin: 0 auto;
+}
+
+.headline.light {
+  color: var(--theme-color-dark)
+}
+
+.headline.center .container > div {
+    margin: 0 auto;
+}
+.headline.center .container > div > p img {
+    width: 54px;
+}
+.headline h2 {
+    margin: 24px 0 16px;
+}
+.headline p {
+    margin: 0 0 16px;
+    font-size: 20px;
+}
+.headline a {
+    margin: 0;
+    text-decoration: none;
+    color: #1473E6;
+}
+.headline a:hover {
+    margin: 0;
+    text-decoration: underline;
+    color: #1473E6;
+}
+.headline.banner {
+    height: 450px;
+}
+
+.headline.center {
+    text-align: center;
+}
+.headline .container {
+    max-width: var(--grid-mobile-container-width);
+    margin: 0 auto;
+}
+
+.headline .ribbon img {
+    object-fit: cover;
+    height: 100%;
+    width: 100%;
+}
+
+.headline .ribbon {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 10px;
+}
+
+.headline .background picture {
+  display: block;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+}
+
+.headline .background img {
+  object-fit: cover;
+  height: 100%;
+  width: 100%;
+}
+
+@media screen and (min-width: 1440px) {
+    .headline .container {
+        /*max-width: 1440px;*/
+        max-width: var(--grid-desktop-container-width);
+    }
+}

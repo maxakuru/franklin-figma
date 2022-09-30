@@ -1,0 +1,15 @@
+.*
+*.md
+karma.config.js
+LICENSE
+package.json
+package-lock.json
+test/**
+lerna.json
+testing/**
+images/**
+packages/**
+manifest.json
+tsconfig.json
+tsconfig.*.json
+*.d.ts

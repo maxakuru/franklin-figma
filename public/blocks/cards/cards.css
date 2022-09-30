@@ -1,0 +1,137 @@
+.cards {
+    min-height: 560px;
+    position: relative;
+    color: #FFF;
+    display: block;
+    padding: var(--spacing-xxl) 0;
+}
+
+.cards .card-header {
+  padding: 0 0 var(--spacing-xxl) 0;
+  position: relative;
+}
+
+.cards.light, .cards.quiet, .cards.inline {
+    color: #000;
+}
+
+.cards.small, .cards.quiet, .cards.inline {
+    min-height: 360px;
+}
+
+.cards.large {
+    min-height: 700px;
+}
+
+.cards.centered {
+    text-align: center;
+}
+
+.cards.centered .card {
+  text-align: left;
+}
+
+.cards.large {
+  display: block;
+}
+.cards.large .foreground {
+  margin-top: var(--spacing-m);
+}
+.cards.large .background picture {
+  position: relative;
+}
+
+.cards .background picture {
+    display: block;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+}
+
+.cards .card img,
+.cards .background img {
+    object-fit: cover;
+    height: 100%;
+    width: 100%;
+    border-radius: 4px 4px 0 0;
+}
+
+.cards .foreground {
+    position: relative;
+
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100%, 1fr));
+    grid-gap: 2ch;
+}
+.cards .card > p{
+  margin: 0;
+}
+.cards .card {
+  background: white;
+  color: black;
+  padding: 16px;
+  border-radius: 4px;
+  box-shadow: 0 0 4px 0px rgb(0 0 0 / 20%);
+}
+.cards .card .featured-image {
+  margin: -16px -16px 0;
+  padding: 0 0 16px;
+}
+.cards .card img {
+  max-width: 100%;
+}
+.cards .card .detail-M {
+    margin-bottom: 16px;
+}
+
+.cards .card .heading-XL {
+    margin-bottom: 16px;
+}
+
+.cards .card .body-M {
+    margin-bottom: 24px;
+}
+.cards .card .body-S {
+  color: #505050;
+}
+
+.cards .text .action-area {
+    display: flex;
+    margin: 0 0 24px 0;
+    gap: 24px;
+}
+
+.cards.quiet.centered .action-area {
+    justify-content: center;
+}
+
+.cards .image img {
+    display: block;
+    width: 100%;
+}
+
+/* tablet */
+@media only screen and (min-width: 600px) {
+  .cards .foreground {
+    grid-template-columns: repeat(auto-fill, minmax(25%, 1fr));
+  }
+}
+/* desktop */
+@media only screen and (min-width: 1400px) {
+  .cards.large .background picture {
+    position: absolute;
+  }
+  .cards.large {
+    display: flex;
+  }
+  .cards.large .foreground {
+    margin-top: 0;
+  }
+  .cards.large .foreground.container {
+    min-width: 1200px;
+  }
+}
+
+

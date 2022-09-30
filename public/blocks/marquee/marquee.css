@@ -1,0 +1,145 @@
+.marquee {
+    min-height: 560px;
+    position: relative;
+    color: #FFF;
+    display: flex;
+}
+
+.marquee.light, .marquee.quiet, .marquee.inline {
+    color: #000;
+}
+
+.marquee.small, .marquee.quiet, .marquee.inline {
+    min-height: 360px;
+}
+
+.marquee.centered {
+    text-align: center;
+}
+
+.marquee.large {
+  min-height: auto;
+  display: block;
+  color: #000;
+}
+.marquee.light.large {
+  color: #000;
+}
+
+.marquee.large .foreground {
+  margin-top: var(--spacing-m);
+}
+.marquee.large .background picture {
+  position: relative;
+}
+
+
+
+.marquee .background picture {
+    display: block;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+}
+
+.marquee .background img {
+    object-fit: cover;
+    height: 100%;
+    width: 100%;
+}
+
+.marquee .foreground {
+    position: relative;
+    display: block;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.marquee .foreground > div {
+    flex: 0 0 calc(50% - calc(var(--grid-column-width) / 2));
+}
+
+.marquee.quiet .foreground > div {
+    flex: 0 0 100%;
+}
+
+.marquee .text .detail-M {
+    margin-bottom: 16px;
+}
+
+.marquee .text .heading-XL {
+    margin-bottom: 16px;
+}
+
+.marquee .text .body-M {
+    margin-bottom: 24px;
+}
+
+.marquee .text img {
+    max-height: 56px;
+}
+
+.marquee .text .action-area {
+    display: flex;
+    margin: 0 0 24px 0;
+    gap: 24px;
+}
+
+.marquee.quiet.centered .action-area {
+    justify-content: center;
+}
+
+.marquee .image img {
+    display: block;
+    width: 100%;
+}
+/* desktop */
+@media only screen and (min-width: 1400px) {
+  .marquee .foreground {
+    display: flex;
+  }
+  .marquee.large .background picture {
+    position: absolute;
+  }
+  .marquee.large {
+    display: flex;
+    min-height: 700px;
+    color: #FFF;
+  }
+
+  .marquee.large .con-button.outline {
+    color: var(--theme-color-light);
+    border: 2px solid var(--theme-color-light);
+  }
+  .marquee.large .con-button.outline:hover,
+  .marquee.large .con-button.outline:active {
+    color: var(--theme-color-dark);
+    background: var(--theme-color-light);
+  }
+
+  .marquee.large.light .con-button.outline {
+    color: var(--theme-color-dark);
+    border: 2px solid var(--theme-color-dark);
+  }
+  .marquee.large.light .con-button.outline:hover,
+  .marquee.large.light .con-button.outline:active {
+    color: var(--theme-color-light);
+    background: var(--theme-color-dark);
+  }
+
+  .marquee.large .foreground {
+    margin-top: 0;
+  }
+  .marquee.large .foreground.container {
+    min-width: 1200px;
+  }
+}
+
+@media not screen and (min-width: 1400px) {
+  .marquee .foreground.container {
+    margin-top: 24px;
+    margin-bottom: 24px;
+  }
+}
