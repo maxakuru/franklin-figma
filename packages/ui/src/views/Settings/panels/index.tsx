@@ -1,4 +1,5 @@
-import React from 'react';
+import * as React from 'react';
+
 import { Panel } from "../../../types";
 import { DocumentPanel } from './Document';
 import { GlobalPanel } from './Global';

@@ -1,4 +1,5 @@
-import React, { useEffect } from "react";
+import * as React from 'react';
+import { useEffect } from "react";
 import MessageBus from '@franklin-figma/messages';
 import { observer } from 'mobx-react-lite';
 import { useRootStore } from "./state/provider";
@@ -46,7 +47,7 @@ const App = observer(() => {
                     justifyContent='space-around' 
                     alignItems='center'
                     height='100%'>
-                        <ProgressCircle isIndeterminate={true} size='L'/>
+                        <ProgressCircle aria-label='Loading' isIndeterminate={true} size='L'/>
                 </Flex>
             </div>
         }

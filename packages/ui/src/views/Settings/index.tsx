@@ -1,12 +1,11 @@
-import React, { useCallback, useEffect, useState } from "react";
-import MessageBus from '@franklin-figma/messages';
-import { useRootStore } from "../../state/provider";
+import * as React from 'react';
+import { useCallback, useEffect, useState } from "react";
 import { Flex, Item, TabList, TabPanels, Tabs, View } from "@adobe/react-spectrum";
-import { Panel } from "../../types";
-import allPanels from "./panels";
 import { observer } from "mobx-react-lite";
 
-
+import { useRootStore } from "../../state/provider";
+import { Panel } from "../../types";
+import allPanels from "./panels";
 
 const SettingsView: React.FC = observer(() => {
   const store = useRootStore();
@@ -29,8 +28,13 @@ const SettingsView: React.FC = observer(() => {
     }, []);
 
     return(
-        store.viewReady && 
-          <Tabs
+        store.viewReady &&
+        <>
+        { panels.length === 1 
+          ? <Flex direction='column' marginY='size-100'>
+            {panels[0].children}
+          </Flex>
+          : <Tabs
             aria-label="Panels"
             items={panels}
             density="compact"
@@ -55,7 +59,8 @@ const SettingsView: React.FC = observer(() => {
                 </Item>
               )}
             </TabPanels>
-          </Tabs>);
+          </Tabs>
+    }</>);
 });
 
 export default SettingsView;

@@ -10,7 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
-import React, { createContext, ReactNode, useContext } from 'react';
+import * as React from 'react';
+import { createContext, ReactNode, useContext } from 'react';
 import type {
   AuthStore, 
   SelectionStore,

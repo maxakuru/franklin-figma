@@ -1,5 +1,4 @@
-import React from 'react';
-
+import * as React from 'react';
 import ViewId from './ids';
 import ConfigureView from './Configure';
 import SettingsView from './Settings';

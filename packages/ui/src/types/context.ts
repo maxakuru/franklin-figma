@@ -1,4 +1,4 @@
-import type React from 'react';
+import type * as React from 'react';
 import type { RootStore } from '../state/stores';
 
 export type CancelHandler = (reason?: any) => void | Promise<void>;

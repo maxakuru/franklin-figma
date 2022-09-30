@@ -36,6 +36,8 @@ class _RootStore {
 
   initPayload: PayloadMap['ui:init'] = undefined;
 
+  theme: 'light' | 'dark' = undefined;
+
   /**
    * Promise that resolves when initialization is complete
    */
@@ -54,6 +56,7 @@ class _RootStore {
       nodeId: observable,
       viewReady: observable,
       initPayload: observable,
+      theme: observable,
 
       _init: action,
       reset: action,
@@ -61,7 +64,8 @@ class _RootStore {
       setNodeType: action,
       setViewType: action,
       setViewReady: action,
-      setInitPayload: action
+      setInitPayload: action,
+      setTheme: action
     });
 
     this._initPromise = this._init();
@@ -69,6 +73,10 @@ class _RootStore {
 
   get whenReady(): Promise<void> {
     return this._initPromise;
+  }
+
+  setTheme(theme: 'dark' | 'light') {
+    this.theme = theme;
   }
 
   setNodeId(id: string) {
