@@ -1,15 +1,10 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { build } from 'esbuild';
-import fs from 'fs/promises';
-import { exec, execSync } from 'child_process'
-
-// import { config } from 'dotenv';
+import { exec } from 'child_process'
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-// config({ path: path.resolve(__dirname, './.env') });
 
 process.env.NODE_ENV ??= 'development';
 const dev = process.env.NODE_ENV === 'development';
@@ -40,7 +35,7 @@ const onRebuild = async (error, result) => {
 try {
   await build({
     bundle: true,
-    sourcemap: dev && 'inline',
+    sourcemap: dev ? 'inline' : false,
     format: 'esm',
     watch: watch ? { onRebuild } : false,
     target: 'es2017',
@@ -59,6 +54,7 @@ try {
 
   await emitDeclaration();
   
-} catch {
+} catch (e) {
+  console.error('[widgets] build failed: ', e);
   process.exitCode = 1;
 }

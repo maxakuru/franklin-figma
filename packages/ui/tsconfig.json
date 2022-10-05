@@ -5,10 +5,21 @@
       "dom",
       "es2017"
     ],
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact",
     "outDir": "dist",
-    "jsx": "react",
     "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "baseUrl": "./",
+    "paths": {
+      "react": [
+        "./polyfills/preact.mjs"
+      ],
+      "react-dom": [
+        "./polyfills/preact.mjs"
+      ]
+    }
   },
   "include": [
     "src"

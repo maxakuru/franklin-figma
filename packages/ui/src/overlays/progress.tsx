@@ -1,6 +1,3 @@
-
-import React from 'react';
-import ReactDOM from 'react-dom';
 import {
   ProgressBar,
   defaultTheme,
@@ -8,8 +5,9 @@ import {
 } from '@adobe/react-spectrum';
 
 import type { BaseStateContext, ProgressContext, CancelHandler } from '../types';
-import type { RootStore } from '../state/stores';
 import rootStore from '../state/stores/root.store';
+import { PureComponent } from 'preact/compat';
+import { render, VNode } from 'preact';
 
 interface ProgressOptionsInternal {
   title: string;
@@ -50,7 +48,7 @@ function getOpts<T extends BaseStateContext>(
   };
 }
 
-export class Progress extends React.Component<ProgressProps, ProgressState> {
+export class Progress extends PureComponent<ProgressProps, ProgressState> {
   constructor(props: ProgressProps) {
     super(props);
     this.state = {
@@ -144,7 +142,7 @@ export class Progress extends React.Component<ProgressProps, ProgressState> {
     await close();
   }
 
-  setMessage(msg: string | React.ReactElement = '') {
+  setMessage(msg: string | VNode = '') {
     const node = document.querySelector('#progress-message');
     if (!node) {
       return;
@@ -153,7 +151,7 @@ export class Progress extends React.Component<ProgressProps, ProgressState> {
     if (typeof msg === 'string') {
       node.innerHTML = msg;
     } else {
-      ReactDOM.render(msg, node);
+      render(msg, node);
     }
   }
 
@@ -240,7 +238,7 @@ export function makeProgressContext<T extends BaseStateContext>(
   const ctx: ProgressContext = {
     ...(opts.baseCtx || { rootStore }),
     canceled: false,
-    setMessage: (msg?: string | React.ReactElement) => {
+    setMessage: (msg?: string | VNode) => {
       // instance.setMessage(msg);
       console.log('setMessage: ', msg);
     },

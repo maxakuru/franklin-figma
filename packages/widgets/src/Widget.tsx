@@ -2,7 +2,7 @@ import MessageBus, { AnyFunc } from '@franklin-figma/messages';
 import { spawn } from '@franklin-figma/ui-worker';
 
 import { Button } from './components';
-import { findAncestor, clamp } from './utils';
+import { findAncestor, clamp, showUI } from './utils';
 import GridIcon from './assets/icons/grid';
 import SettingsIcon from './assets/icons/settings';
 import PreviewIcon from './assets/icons/preview';
@@ -51,8 +51,8 @@ export default function Widget() {
     const x = Math.round(bounds.x * zoom + (bounds.width * zoom - width)/2) * 1/zoom;
     const y = Math.round(bounds.y * zoom + (bounds.height * zoom - height)/2) * 1/zoom;
 
-    figma.showUI(__uiFiles__['ui'], {
-      title: `Settings (AEM Franklin)`,
+    showUI({
+      title: `Settings`,
       position: {
         x,
         y
@@ -172,8 +172,8 @@ export default function Widget() {
     const height = Math.round(clamp(bounds.height * zoom * 0.6, 700, 1080));
     const width = Math.round(clamp(bounds.width * zoom * 0.3, 300, 700));
 
-    figma.showUI(__uiFiles__['ui'], {
-      title: `Configure ${nodeType === 'FORM' ? 'form' : 'page'} (AEM Franklin)`,
+    showUI({
+      title: `Configure ${nodeType === 'FORM' ? 'form' : 'page'}`,
       position: { 
         x: focusNode.x + focusNode.width + 10, 
         y: focusNode.y

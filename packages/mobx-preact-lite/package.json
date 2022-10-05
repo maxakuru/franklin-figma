@@ -1,0 +1,23 @@
+{
+  "name": "@franklin-figma/mobx-preact-lite",
+  "version": "1.0.0",
+  "description": "AEM Franklin Figma Plugin",
+  "main": "dist/index.js",
+  "types": "../../mobx-react-lite/dist/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "dev": "npm run build -- -w"
+  },
+  "author": "",
+  "license": "",
+  "devDependencies": {
+    "tslib": "2.4.0"
+  },
+  "dependencies": {
+    "esbuild": "0.15.7",
+    "mobx": "^6.6.2",
+    "mobx-react-lite": "^3.4.0",
+    "preact": "^10.11.0"
+  }
+}

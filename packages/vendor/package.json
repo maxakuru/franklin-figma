@@ -1,0 +1,25 @@
+{
+  "name": "@franklin-figma/vendor",
+  "version": "1.0.0",
+  "description": "AEM Franklin Figma vendor prebuilt minified packages",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "node build.mjs",
+    "dev": "npm run build -- -w"
+  },
+  "author": "",
+  "license": "",
+  "devDependencies": {
+    "@figma/plugin-typings": "1.51.0",
+    "@figma/widget-typings": "1.5.0",
+    "tslib": "2.4.0"
+  },
+  "dependencies": {
+    "@franklin-figma/messages": "^1.0.0",
+    "esbuild": "0.15.7",
+    "mobx": "^6.6.2",
+    "preact": "^10.11.0"
+  }
+}

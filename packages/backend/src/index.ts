@@ -1,3 +1,4 @@
+import './setup';
 import figmaHandler from './figma';
 import figjamHandler from './figjam';
 import { wrapCommon } from './common';

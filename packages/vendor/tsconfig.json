@@ -1,0 +1,30 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": [
+      "dom",
+      "es2017"
+    ],
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact",
+    "outDir": "dist",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "baseUrl": "./",
+    "paths": {
+      "react": [
+        "./src/preact.ts"
+      ],
+      "react-dom": [
+        "./src/preact.ts"
+      ],
+      "@franklin-figma/messages": [
+        "./src/MessageBus.ts"
+      ]
+    }
+  },
+  "include": [
+    "src"
+  ]
+}

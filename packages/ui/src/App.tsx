@@ -1,12 +1,9 @@
-import * as React from 'react';
-import { useEffect } from "react";
+import { useEffect } from "preact/hooks";
 import MessageBus from '@franklin-figma/messages';
-import { observer } from 'mobx-react-lite';
+import { observer } from '@franklin-figma/mobx-preact-lite';
 import { useRootStore } from "./state/provider";
 import View from "./views";
 import { Flex, ProgressCircle } from "@adobe/react-spectrum";
-// import { Progress } from './overlays/progress';
-// import root from './state/stores';
 
 import './App.css';
 

@@ -5,17 +5,21 @@
   "description": "AEM Franklin Figma Plugin",
   "type": "module",
   "scripts": {
-    "build": "npm run -ws build",
+    "build": "npm run --ws build --if-present",
     "dev:messages": "npm run dev -w packages/messages",
     "dev:ui": "npm run dev -w packages/ui",
     "dev:backend": "npm run dev -w packages/backend",
     "dev:widgets": "npm run dev -w packages/widgets",
     "dev:ui-worker": "npm run dev -w packages/ui-worker",
-    "dev": "concurrently -k \"npm:dev:*\"",
+    "dev:mobx-preact-lite": "npm run dev -w packages/mobx-preact-lite",
+    "dev:vendor": "npm run dev -w packages/vendor",
+    "dev:public": "npm run dev -w public",
+    "dev": "NODE_ENV=development concurrently -k \"npm:dev:*\"",
     "lint": "npm run lint --ws --if-present",
     "test": "npm test --ws --if-present",
     "clean": "npm run clean --ws --if-present",
-    "purge": "npm run purge --ws --if-present"
+    "purge": "npm run purge --ws --if-present",
+    "prepare": "husky install"
   },
   "author": "",
   "license": "",
@@ -23,10 +27,12 @@
     "@types/node": "18.7.18",
     "concurrently": "7.4.0",
     "dotenv": "16.0.3",
+    "husky": "^8.0.1",
     "typescript": "4.8.3"
   },
   "workspaces": [
     "packages/messages",
+    "packages/vendor",
     "packages/!(backend|ui|widgets)",
     "packages/widgets",
     "packages/backend",

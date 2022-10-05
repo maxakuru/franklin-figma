@@ -89,6 +89,7 @@ export type MaybeOptionalPayloadFn<T extends MessageType> = PayloadMap[T] extend
 
 const dev = globalThis.DEV;
 const frontend = globalThis.UI || globalThis.WIDGET || typeof figma === 'undefined';
+const figmaHost = 'https://www.figma.com';
 
 class MessageBus {
   #frontend: boolean;
@@ -298,9 +299,12 @@ class MessageBus {
   private _send<T extends MessageType | PrivateMessageType>(type: T, payload: PrivatePayloadMap[T]) {
     try {
       if (this.#frontend) {
-        parent.postMessage({ pluginMessage: { type, payload } }, dev ? '*' : '/');
+        parent.postMessage({
+          pluginMessage: { type, payload },
+          pluginId: globalThis.PLUGIN_ID
+        }, dev ? '*' : figmaHost);
       } else {
-        figma.ui.postMessage({ type, payload }, { origin: dev ? '*' : '/' });
+        figma.ui.postMessage({ type, payload }, { origin: dev ? '*' : globalThis.UI_ENDPOINT });
       }
     } catch (e) {
       if (typeof e === 'object' && typeof (e as any).message === 'string' && (e as any).message.includes('No UI to send a message to')) {

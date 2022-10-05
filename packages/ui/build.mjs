@@ -1,50 +1,16 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { build } from 'esbuild';
-import fs from 'fs/promises';
 import { config as configEnv } from 'dotenv';
+import { preactPlugin, messageBusPlugin } from '@franklin-figma/vendor';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-configEnv({ path: path.resolve(__dirname, './.public.env') });
+configEnv({ path: path.resolve(__dirname, '../../.public.env') });
 configEnv({ path: path.resolve(__dirname, './.env') });
 
-console.log('process.env: ', process.env);
-
-process.env.NODE_ENV ??= 'development';
 const dev = process.env.NODE_ENV === 'development';
 const watch = process.argv.includes('--watch') || process.argv.includes('-w');
-
-/**
- * @param {string} code 
- * @returns {string}
- */
- const template = (code, styles) => { 
-  return `
-<style>
-${styles}
-</style>
-<div id="app"></div>
-<script>
-  ${code}
-</script>
-`;
-}
-
-const writeHtml = async () => {
-  let buf = await fs.readFile(path.resolve(__dirname, './dist/index.js'));
-  const code = buf.toString('utf8');
-
-  buf = await fs.readFile(path.resolve(__dirname, './dist/index.css'));
-  const styles = buf.toString('utf8');
-
-  const html = template(code, styles);
-  await fs.writeFile(path.resolve(__dirname, './dist/index.html'), html, {encoding: 'utf8'});
-
-  await fs.unlink(path.resolve(__dirname, './dist/index.js'));
-  await fs.unlink(path.resolve(__dirname, './dist/index.css'));
-
-}
 
 const onRebuild = async (error, result) => {
   if (error) {
@@ -54,7 +20,6 @@ const onRebuild = async (error, result) => {
     console.warn(`watch build succeeded with ${result.warnings.length} warnings: `, result);
   }
   else {
-    await writeHtml();
     console.debug('watch build succeeded');
   }
 };
@@ -91,29 +56,58 @@ const variableEnvVars = (env) => {
 };
 
 try {
-  const res = await build({
+  await build({
     bundle: true,
-    sourcemap: dev && 'inline',
+    sourcemap: dev ? 'inline': false,
     format: 'esm',
+    assetNames: '[dir][name]',
     watch: watch ? { onRebuild } : false,
     target: 'es2017',
+    external: ['preact', '@franklin-figma/messages'],
     define: {
       'process.env.OAUTH_FLOW': JSON.stringify(process.env.OAUTH_FLOW ?? 'access_code'),
       'process.env.MICROSOFT_TENANT_ID': JSON.stringify(process.env.MICROSOFT_TENANT_ID),
       'process.env.MICROSOFT_CLIENT_ID': JSON.stringify(process.env.MICROSOFT_CLIENT_ID),
       'process.env.GOOGLE_CLIENT_ID': JSON.stringify(process.env.GOOGLE_CLIENT_ID),
       'process.env.GOOGLE_DEVICECODE_CLIENT_ID': JSON.stringify(process.env.GOOGLE_DEVICECODE_CLIENT_ID),
+      'process.env.PLUGIN_ID': JSON.stringify(process.env.PLUGIN_ID),
+      'process.env.DEV': JSON.stringify(dev),
       ...variableEnvVars(process.env.NODE_ENV),
     },
+    plugins: [
+      preactPlugin,
+      messageBusPlugin
+    ],
     minify: !dev,
     treeShaking: true,
     conditions: ['worker', 'browser'],
     entryPoints: [path.resolve(__dirname, 'src/index.tsx')],
-    outdir: path.resolve(__dirname, 'dist'),
+    outdir: path.resolve(__dirname, '../../public/plugin/ui'),
     tsconfig: path.resolve(__dirname, './tsconfig.json'),
   });
 
-  await writeHtml();
-} catch {
+  // if(!watch) {
+  //   // build react into web ui
+  //   await build({
+  //     bundle: true,
+  //     minify: true,
+  //     treeShaking: false,
+  //     keepNames: true,
+  //     format: 'esm',
+  //     target: 'es2017',
+  //     define: {
+  //       'process.env.NODE_ENV': '"production"',
+  //     },
+  //     outExtension: {
+  //       '.js': '.min.js',
+  //     },
+  //     entryPoints: [
+  //       path.resolve(__dirname, 'polyfills/preact.mjs'),
+  //     ],
+  //     outdir: path.resolve(__dirname, '../../public/scripts'),
+  //   });
+  // }
+} catch(e) {
+  console.error('[ui] build failed: ', e);
   process.exitCode = 1;
 }

@@ -10,7 +10,6 @@
  * governing permissions and limitations under the License.
  */
 
-import type * as React from 'react';
 import {
   makeObservable,
   observable,
@@ -23,6 +22,7 @@ import { AuthStore } from './auth.store';
 import { SelectionStore } from './selection.store';
 import { SettingsStore } from './settings.store';
 import { PayloadMap } from '@franklin-figma/messages';
+import { VNode } from 'preact';
 
 class _RootStore {
   ready = false;
@@ -39,7 +39,7 @@ class _RootStore {
 
   theme: 'light' | 'dark' = undefined;
 
-  overlayStack: React.ReactElement[] = [];
+  overlayStack: VNode[] = [];
 
   /**
    * Promise that resolves when initialization is complete
@@ -79,7 +79,7 @@ class _RootStore {
     return this._initPromise;
   }
 
-  pushOverlay(overlay: React.ReactElement) {
+  pushOverlay(overlay: VNode) {
     this.overlayStack.push(overlay);
   }
 
@@ -88,26 +88,33 @@ class _RootStore {
   }
 
   setTheme(theme: 'dark' | 'light') {
+    console.log(`setTheme(${theme})`);
+
     this.theme = theme;
   }
 
   setNodeId(id: string) {
+    console.log(`setNodeId(${id})`);
     this.nodeId = id;
   }
 
   setNodeType(type: 'PAGE' | 'FORM') {
+    console.log(`setNodeType(${type})`);
     this.nodeType = type;
   }
 
   setViewType(type: ViewId) {
+    console.log(`setViewType(${type})`);
     this.viewType = type;
   }
 
   setViewReady(ready: boolean) {
+    console.log(`setViewReady(${ready})`);
     this.viewReady = ready;
   }
 
   setInitPayload(payload: PayloadMap['ui:init']) {
+    console.log(`setInitPayload(${payload})`);
     this.initPayload = payload;
   }
 

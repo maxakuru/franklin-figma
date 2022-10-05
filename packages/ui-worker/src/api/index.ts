@@ -9,7 +9,14 @@ import MessageBus from "@franklin-figma/messages";
 export function spawn<
   TFunc extends (this: null, ctx: Window, ...args: any[]) => any,
 >(fn: TFunc, args?: Record<string, unknown>): Promise<ReturnType<TFunc>> {
-  figma.showUI(__uiFiles__['worker'], { visible: false });
+  figma.showUI(
+    `<script>
+      window.location.href = "${globalThis.UI_ENDPOINT}/plugin/worker";
+    </script>`,
+    {
+      visible: false
+    }
+  );
 
   return new Promise((resolve, reject) => {
     MessageBus.once('worker:ready', () => {

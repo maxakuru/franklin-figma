@@ -1,6 +1,7 @@
-import * as React from 'react';
 import { Text, ButtonGroup, ActionButton } from '@adobe/react-spectrum';
-import { observer } from 'mobx-react-lite';
+// import { observer } from 'mobx-preact';
+// import { observer } from 'mobx-react-lite';
+import { observer } from '@franklin-figma/mobx-preact-lite';
 
 import { useRootStore } from '../../../state/provider';
 import { Edit } from '../../../spectrumIcons';

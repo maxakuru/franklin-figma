@@ -10,8 +10,11 @@
  * governing permissions and limitations under the License.
  */
 
-import * as React from 'react';
-import { createContext, ReactNode, useContext } from 'react';
+
+import type { JSX, VNode } from 'preact';
+import { createContext } from 'preact';
+import { useContext } from 'preact/hooks';
+
 import type {
   AuthStore, 
   SelectionStore,
@@ -21,7 +24,7 @@ import root from './stores';
 
 const StoreContext = createContext<RootStore | undefined>(undefined);
 
-export function RootStoreProvider({ children }: { children: ReactNode }): JSX.Element {
+export function RootStoreProvider({ children }: { children: VNode }): JSX.Element {
   return <StoreContext.Provider value={root}>{children}</StoreContext.Provider>;
 }
 

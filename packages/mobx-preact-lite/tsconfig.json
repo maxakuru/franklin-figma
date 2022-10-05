@@ -1,0 +1,26 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": [
+      "dom",
+      "es2017"
+    ],
+    "jsx": "react-jsx",
+    "outDir": "dist",
+    "esModuleInterop": false,
+    "allowSyntheticDefaultImports": false,
+    "skipLibCheck": true,
+    // "baseUrl": "./",
+    // "paths": {
+    //   "react": [
+    //     "preact/compat"
+    //   ],
+    //   "react-dom": [
+    //     "preact/compat"
+    //   ]
+    // }
+  },
+  "include": [
+    "src"
+  ]
+}

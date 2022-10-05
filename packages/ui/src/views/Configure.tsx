@@ -1,8 +1,11 @@
-import * as React from 'react';
-import { useCallback, useEffect, useState } from "react";
+import { useEffect } from "preact/hooks";
 import MessageBus from '@franklin-figma/messages';
 import { useRootStore } from "../state/provider";
-import { observer } from "mobx-react-lite";
+// import { observer } from "mobx-preact";
+// import { observer } from 'mobx-react-lite';
+import { observer } from '@franklin-figma/mobx-preact-lite';
+
+import { Fragment } from "preact";
 
 const ConfigureView: React.FC = observer(() => {
   const store = useRootStore();
@@ -26,10 +29,10 @@ const ConfigureView: React.FC = observer(() => {
               ? <p>Cannot configure a node outside of the {store.nodeType.toLowerCase()}</p> 
               : selection.nodesUnderRoot.map((node) => {
                 return (
-                    <React.Fragment key={node.id}>
+                    <Fragment key={node.id}>
                         <p>Selected: {node.name} ({node.id})</p>
                         <p>Type: ({node.type})</p>
-                    </React.Fragment>
+                    </Fragment>
                 );
             })
         }

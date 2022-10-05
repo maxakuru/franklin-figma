@@ -1,5 +1,6 @@
-import * as React from 'react';
-import { useEffect, useState } from "react"
+import type { VNode } from 'preact';
+import { PureComponent } from 'preact/compat';
+import { useEffect } from "preact/hooks"
 import { RootStoreProvider, useRootStore } from "./state/provider"
 import { AnyOk } from "./types";
 import {
@@ -7,7 +8,7 @@ import {
   Provider as SpectrumProvider,
 } from '@adobe/react-spectrum';
 
-class ErrorBoundary extends React.Component<AnyOk> {
+class ErrorBoundary extends PureComponent<AnyOk> {
   constructor(props: AnyOk) {
     super(props);
     this.state = { hasError: false };
@@ -15,6 +16,8 @@ class ErrorBoundary extends React.Component<AnyOk> {
 
   static getDerivedStateFromError(error: AnyOk) {
     console.log('[ErrorBoundary] getDerivedStateFromError()', error);
+    return error;
+
   }
 
   componentDidCatch(error: AnyOk, errorInfo: AnyOk) {
@@ -30,7 +33,7 @@ class ErrorBoundary extends React.Component<AnyOk> {
 
 const ThemeProvider = ({
   children
-}: { children: React.ReactElement }) => {
+}: { children: VNode }) => {
   const store = useRootStore();
   useEffect(() => {
     if(document.documentElement.classList.contains('figma-dark')) {
@@ -45,7 +48,7 @@ const ThemeProvider = ({
 
 export default ({
   children
-}: { children: React.ReactElement }) => {
+}: { children: VNode }) => {
   return (
     <ErrorBoundary>
       <RootStoreProvider>

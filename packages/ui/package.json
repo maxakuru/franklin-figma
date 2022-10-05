@@ -12,18 +12,16 @@
   "license": "",
   "devDependencies": {
     "@figma/plugin-typings": "1.51.0",
-    "@types/react": "18.0.20",
-    "@types/react-dom": "18.0.6",
-    "tslib": "2.4.0"
+    "tslib": "2.4.0",
+    "@franklin-figma/vendor": "^1.0.0"
   },
   "dependencies": {
     "@adobe/react-spectrum": "^3.21.2",
     "@franklin-figma/messages": "^1.0.0",
+    "@franklin-figma/mobx-preact-lite": "^1.0.0",
     "@spectrum-icons/workflow": "^4.0.2",
     "esbuild": "0.15.7",
     "mobx": "^6.6.2",
-    "mobx-react-lite": "^3.4.0",
-    "react": "18.2.0",
-    "react-dom": "18.2.0"
+    "preact": "^10.11.0"
   }
 }
