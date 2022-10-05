@@ -1,0 +1,24 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "sourceMap": true,
+    "outDir": "dist",
+    "module": "esnext",
+    "target": "esnext",
+    "moduleResolution": "node",
+    "typeRoots": [
+      "../../node_modules/@types"
+    ],
+    "types": [
+      "@cloudflare/workers-types"
+    ],
+    "baseUrl": "src",
+    "removeComments": true,
+    "skipLibCheck": true,
+    "strictNullChecks": true
+  },
+  "include": [
+    "src"
+  ]
+}

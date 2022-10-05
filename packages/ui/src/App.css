@@ -1,3 +1,22 @@
+html {
+  height: 100vh;
+}
+
 body {
   margin: 0;
+  height: 100%;
+}
+
+#app,
+#app>div {
+  height: 100%;
+}
+
+#app {
+  border: 2px solid var(--figma-color-border, rgba(0, 0, 0, .1));
+  border-top: 0;
+  border-bottom-width: 3px;
+  border-top-left-radius: 1px;
+  border-top-right-radius: 1px;
+  box-sizing: border-box;
 }

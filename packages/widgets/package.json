@@ -14,11 +14,11 @@
   "devDependencies": {
     "@figma/plugin-typings": "1.51.0",
     "@figma/widget-typings": "1.5.0",
-    "tslib": "2.4.0"
+    "tslib": "2.4.0",
+    "esbuild": "0.15.7"
   },
   "dependencies": {
     "@franklin-figma/messages": "^1.0.0",
-    "@franklin-figma/ui-worker": "^1.0.0",
-    "esbuild": "0.15.7"
+    "@franklin-figma/ui-worker": "^1.0.0"
   }
 }

@@ -735,9 +735,14 @@ async function loadLazy(doc) {
   loadTheme();
   await loadBlocks(main);
 
-  const { hash } = window.location;
+  const { hash, pathname } = window.location;
   const element = hash ? main.querySelector(hash) : false;
   if (hash && element) element.scrollIntoView();
+
+  if (pathname.startsWith('/plugin')) {
+    document.body.style.backgroundColor = 'var(--figma-color-bg)';
+    return;
+  }
 
   // header
   loadHeader(doc.querySelector('header'));

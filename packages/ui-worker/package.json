@@ -13,10 +13,10 @@
   "author": "",
   "license": "",
   "devDependencies": {
-    "tslib": "2.4.0"
+    "tslib": "2.4.0",
+    "esbuild": "0.15.7"
   },
   "dependencies": {
-    "@franklin-figma/messages": "^1.0.0",
-    "esbuild": "0.15.7"
+    "@franklin-figma/messages": "^1.0.0"
   }
 }
