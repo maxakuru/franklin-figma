@@ -20,6 +20,7 @@ export interface AuthData {
   refreshToken: string;
   scope: string;
   tokenType: string;
+  expiresIn: number;
 }
 
 export interface RefreshedTokenData {

@@ -42,18 +42,29 @@ export function redirect(path: string, ctx: Context) {
   return new Response(null, {
     status: 302,
     headers: {
+      'access-control-allow-origin': ctx.env.UI_ENDPOINT,
       location: `${ctx.env.ENDPOINT}${path}`
     }
-  })
+  });
 }
 
-export function errorResponse(status: number, error: string): Response {
+export function notFound(ctx: Context) {
+  return new Response('Not found', {
+    status: 404,
+    headers: {
+      'access-control-allow-origin': ctx.env.UI_ENDPOINT
+    }
+  });
+}
+
+export function errorResponse(status: number, error: string, ctx: Context): Response {
   return new Response(JSON.stringify({ error }), {
     status,
     headers: {
+      'access-control-allow-origin': ctx.env.UI_ENDPOINT,
       'content-type': ContentType.JSON
     }
-  })
+  });
 }
 
 export async function logErrorBody(response: Response, provider: AuthProvider, ctx: Context): Promise<Response> {

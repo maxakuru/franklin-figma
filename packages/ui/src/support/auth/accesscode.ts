@@ -21,7 +21,7 @@ import {
 import { openBrowser } from '../../support/figma';
 
 import type { ProgressContext, AnyOk } from '../../types';
-import type { AuthData, AuthProvider } from './types';
+import type { AuthData, AuthProvider, NewTokenData } from './types';
 
 // eslint-disable-next-line prefer-destructuring
 const ENDPOINT = process.env.AUTH_ENDPOINT;
@@ -34,19 +34,16 @@ function doFetch(
 ): CancelablePromise<Response> {
   query['provider'] = provider;
   const params = new URLSearchParams(query);
-  const paramStr = params.toString();
-  const url = `${ENDPOINT}/api/auth${path}?${paramStr}`;
-  console.debug('[auth] doFetch() url: ', url);
+  const url = `${ENDPOINT}/api/auth${path}?${params.toString()}`;
   return cancelableFetch(url, init);
 }
 
-async function pollForCode(
+async function pollForAuthData(
   location: string,
   ctx: ProgressContext,
-): Promise<string> {
+): Promise<NewTokenData> {
   const resp = await poll(location, ctx);
   const data = await resp.json();
-  console.log('polled for data: ', data);
   return data.access_token;
 }
 
@@ -57,17 +54,18 @@ export async function authenticate(
   provider: AuthProvider,
   ctx: ProgressContext,
 ): Promise<AuthData> {
-  let data: any;
+  let data: NewTokenData;
   try {
     const resp = await doFetch(provider, '/session', { method: 'POST' });
     if (!resp.ok) {
       throw makePublicError(`Failed to authenticate: ${resp.status}`);
     }
 
-    const { url } = await resp.json();
+    const session = await resp.json();
+    const { url } = session;
     const pollUrl = resp.headers.get('location');
     openBrowser(url);
-    data = await pollForCode(pollUrl, ctx);
+    data = await pollForAuthData(pollUrl, ctx);
   } catch (e) {
     throw setErrorMessage(e, 'Failed to authenticate.');
   }
@@ -80,14 +78,17 @@ export async function authenticate(
 }
 
 function makeAuthData(
-  data: any
+  data: NewTokenData
 ): AuthData {
-  data.accessToken = data.access_token;
-  data.expiresIn = data.expires_in;
-  data.expiresAt = new Date(Date.now() + (data.expiresIn * 1000));
-  data.refreshToken = data.refresh_token;
-  data.tokenType = data.token_type;
-  return data;
+  const authData: AuthData = {
+    accessToken: data.access_token,
+    expiresIn: data.expires_in,
+    expiresAt: new Date(Date.now() + (data.expires_in * 1000)),
+    refreshToken: data.refresh_token,
+    tokenType: data.token_type,
+    scope: data.scope
+  }
+  return authData;
 }
 
 export async function revokeAccessToken(provider: AuthProvider, token: string): Promise<void> {
@@ -103,7 +104,7 @@ export async function revokeAccessToken(provider: AuthProvider, token: string): 
   try {
     await cancelableFetch(`https://accounts.google.com/o/oauth2/revoke?token=${token}`);
   } catch (e) {
-    console.error('[auth] Failed to revoke access token: ', e);
+    console.error('[auth/accesstoken] Failed to revoke access token: ', e);
   }
 }
 

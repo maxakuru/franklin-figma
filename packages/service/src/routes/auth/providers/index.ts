@@ -57,7 +57,7 @@ export function makeTokenRequest(
   const opts: Record<string, string | string[]> = {
     grant_type,
     client_id: provider.clientId,
-    redirect_uri: `${ENDPOINT}/api/auth/google/callback`,
+    redirect_uri: `${ENDPOINT}/api/auth/callback`,
     client_secret: provider.clientSecret,
     scope: provider.scope,
   };

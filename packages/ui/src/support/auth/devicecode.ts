@@ -160,6 +160,7 @@ async function pollForAuthData(
   return {
     accessToken,
     expiresAt,
+    expiresIn,
     refreshToken,
     scope,
     tokenType,
@@ -258,6 +259,7 @@ export async function refreshAccessToken(
       scope: data.scope,
       tokenType: data.token_type,
       expiresAt,
+      expiresIn: data.expires_in
     };
   } catch (e: AnyOk) {
     if (isStrictlyObject(e.response) && e.response.status === 400) {

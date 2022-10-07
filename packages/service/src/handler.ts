@@ -11,7 +11,7 @@ const fallback: Route = () => {
 };
 
 router
-  .post('/api/auth/*', AuthAPI)
+  .all('/api/auth/*', AuthAPI)
   .get('/auth/*', AuthUI)
   .get('/*', Franklin)
   .all('/*', fallback);
