@@ -1,0 +1,12 @@
+.redirect-interstitial {
+  max-width: 1000px;
+  margin: auto;
+}
+
+.redirect-interstitial .actions {
+  display: flex;
+}
+
+.redirect-interstitial .actions .button-container:first-child {
+  margin-right: 10px;
+}

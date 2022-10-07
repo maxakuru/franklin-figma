@@ -1,12 +1,11 @@
-export const enum SessionState {
-  Pending = 'pending',
-  Active = 'active'
-}
+import { SessionState } from "def";
+import { AuthProvider } from "routes/auth/types";
+
 
 export interface SessionBase {
   id: string;
-  provider: string;
-  expiration: Date;
+  createdAt: number; // ms since epoch
+  provider: AuthProvider;
   state: SessionState;
 }
 

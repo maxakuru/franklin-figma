@@ -1,39 +1,15 @@
 import type { Context, Session, SessionActive, SessionPending } from "types";
-import { SessionState } from "types";
-import { isType } from "util";
-
+import { SessionState } from "def";
 import { v4 as uuidv4 } from 'uuid';
+import type { AuthProvider } from "routes/auth/types";
 
-const EXPIRATION_PENDING = 300000; // 15 mins in seconds
-
-function getExpiration(sessionOrState: Session | SessionState): Date {
-  if (isType(sessionOrState, 'string')) {
-    const state = sessionOrState;
-
-    if (state === SessionState.Pending) {
-      return new Date(Date.now() + EXPIRATION_PENDING);
-    }
-  }
-
-  if (isType<'object', Session>(sessionOrState, 'object')) {
-    const session = sessionOrState;
-
-    if (session.expiration) {
-      return session.expiration;
-    }
-    if (session.state === SessionState.Pending) {
-      return new Date(Date.now() + EXPIRATION_PENDING);
-    }
-  }
-
-  throw Error('Invalid session');
-}
+export const SESSION_DURATION = 300000; // 15 mins in seconds
 
 function isExpired(session: Session): boolean {
-  return +Date.now() > +session.expiration;
+  return Date.now() > (SESSION_DURATION * 1000 + session.createdAt);
 }
 
-export async function createSession(provider: string, ctx: Context) {
+export async function createSession(provider: AuthProvider, ctx: Context) {
   const { SESSIONS } = ctx.env;
   const id = uuidv4();
 
@@ -41,16 +17,19 @@ export async function createSession(provider: string, ctx: Context) {
   const readKey = uuidv4();
   const writeKey = uuidv4();
 
-
   const session: SessionPending = {
     id,
     provider,
+    createdAt: Date.now(),
     state: SessionState.Pending,
-    expiration: getExpiration(SessionState.Pending),
     readKey,
     writeKey
   };
-  await SESSIONS.put(id, JSON.stringify(session));
+  await SESSIONS.put(
+    id,
+    JSON.stringify(session),
+    { expirationTtl: SESSION_DURATION }
+  );
   return session;
 }
 
@@ -72,21 +51,27 @@ export async function getSession(id: string, ctx: Context): Promise<Session | un
 }
 
 export async function removeSession(id: string, ctx: Context): Promise<void> {
-  await ctx.env.SESSIONS.delete(id);
+  const { SESSIONS } = ctx.env;
+  await SESSIONS.delete(id);
 }
 
 export async function activateSession(session: Session, code: string, ctx: Context): Promise<void> {
   const { SESSIONS } = ctx.env;
 
   if (session.state !== 'pending') {
-    throw Error('Invalid state change.');
+    throw Error('invalid state change');
   } else {
+    const expirationTtl = SESSION_DURATION - ((Date.now() - session.createdAt) / 1000);
     const active: SessionActive = {
       ...session,
       state: SessionState.Active,
       code,
       writeKey: undefined
     };
-    await SESSIONS.put(active.id, JSON.stringify(active));
+    await SESSIONS.put(
+      active.id,
+      JSON.stringify(active),
+      { expirationTtl }
+    );
   }
 }

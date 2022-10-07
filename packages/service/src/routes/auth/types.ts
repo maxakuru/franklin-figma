@@ -1,6 +1,18 @@
+import { Context } from "types";
+
 export type OAuthFlow = 'device_code' | 'access_code';
 
 export type AuthProvider = 'microsoft' | 'google';
+
+export interface Provider {
+  clientId: string;
+  scope: string;
+  authUrl: string;
+  tokenUrl: string;
+  clientSecret: string;
+}
+
+export type ProviderFactory = (ctx: Context) => Provider;
 
 export interface AuthData {
   accessToken: string;

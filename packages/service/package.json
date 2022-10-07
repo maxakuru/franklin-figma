@@ -6,8 +6,8 @@
   "type": "module",
   "scripts": {
     "build": "node build.mjs",
-    "dev": "NODE_ENV=development miniflare --live-reload --debug --modules dist/index.mjs",
-    "dev:remote": "NODE_ENV=development UPSTREAM='https://main--franklin-figma--maxakuru.hlx.live' wrangler dev --env stage",
+    "dev": "NODE_ENV=development miniflare --port 3001 --live-reload --debug --modules dist/index.mjs",
+    "dev:remote": "NODE_ENV=development UPSTREAM='https://main--franklin-figma--maxakuru.hlx.live' wrangler dev --port 3001 --env stage",
     "deploy": "wrangler publish"
   },
   "author": "",

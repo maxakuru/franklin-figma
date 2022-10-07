@@ -1,4 +1,4 @@
-name = "franklin-figma-service"
+name = "franklin-figma"
 main = "dist/index.mjs"
 
 account_id = "b4adf6cfdac0918eb6aa5ad033da0747"

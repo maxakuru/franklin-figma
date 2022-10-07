@@ -1,3 +1,5 @@
+import { ContentType } from "def";
+import { AuthProvider } from "routes/auth/types";
 import { Context, PrimitiveType, PrimitiveTypeMap } from "../types";
 
 export * from './cookie';
@@ -49,7 +51,19 @@ export function errorResponse(status: number, error: string): Response {
   return new Response(JSON.stringify({ error }), {
     status,
     headers: {
-      'content-type': 'application/json'
+      'content-type': ContentType.JSON
     }
   })
+}
+
+export async function logErrorBody(response: Response, provider: AuthProvider, ctx: Context): Promise<Response> {
+  try {
+    const data = await response.text();
+    ctx.log.error(`[auth/${provider}] Error response body: `, data);
+    return new Response(data, response);
+  } catch (e) {
+    ctx.log.error(`[auth/${provider}] Failed to parse: `, response.body);
+  }
+
+  return response;
 }

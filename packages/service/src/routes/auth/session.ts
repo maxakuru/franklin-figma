@@ -1,17 +1,20 @@
-import { Route, SessionState } from "../../types";
+import type { Route } from "../../types";
 import { activateSession, createSession, getSession } from "util/session";
 import { errorResponse, isType, redirect, removeSession, validateCookie } from "util";
-import { parseState } from "util/state";
-
-const PROVIDERS = ['google', 'microsoft'];
+import { createState, parseState } from "util/state";
+import { ContentType, SessionState } from "def";
+import { exchangeCodeForTokens, isValidProvider, makeAuthUrl } from "./providers";
 
 export const create: Route = async (req, ctx) => {
   const { provider } = req.query;
-  if (!provider || PROVIDERS.includes(provider)) {
+  const { ENDPOINT } = ctx.env;
+  if (!isValidProvider(provider)) {
     return errorResponse(400, 'invalid or missing provider');
   }
 
   const { id, readKey, writeKey } = await createSession(provider, ctx);
+  const url = makeAuthUrl(provider, createState({ id, writeKey, provider }), ctx);
+
   return new Response(JSON.stringify({
     id,
     readKey,
@@ -19,9 +22,9 @@ export const create: Route = async (req, ctx) => {
   }), {
     status: 201,
     headers: {
-      'content-type': 'application/json',
-      location: `${ctx.env.ENDPOINT}/api/auth/session/${id}?key=${readKey}`, // poll url
-      'x-open-url': `${ctx.env.ENDPOINT}/auth/login`
+      'content-type': ContentType.JSON,
+      location: `${ENDPOINT}/api/auth/session/${id}?k=${readKey}`, // poll url
+      'x-open-url': `${ENDPOINT}/auth/login?redirectUrl=${encodeURIComponent(url)}&p=${provider}&k=${writeKey}`
     }
   });
 }
@@ -37,20 +40,20 @@ export const activate: Route = async (req, ctx) => {
   const session = await getSession(id, ctx);
 
   if (!session || provider !== session.provider) {
-    return redirect('/auth/failure', ctx);
+    return redirect(`/auth/failure?p=${provider}`, ctx);
   }
 
-  const allowed = session.writeKey === writeKey && validateCookie('writeKey', writeKey, req);
+  const allowed = session.writeKey === writeKey && validateCookie(`${provider}:writeKey`, writeKey, req);
   if (!allowed) {
-    return redirect('/auth/failure', ctx);
+    return redirect(`/auth/failure?p=${provider}`, ctx);
   }
 
   await activateSession(session, code, ctx);
-  return redirect(`/auth/success?provider=${provider}`, ctx);
+  return redirect(`/auth/success?p=${provider}`, ctx);
 }
 
 export const poll: Route = async (req, ctx) => {
-  const { id, readKey } = req.params;
+  const { id, k: readKey } = req.params;
   const { log } = ctx;
 
   try {
@@ -74,10 +77,10 @@ export const poll: Route = async (req, ctx) => {
       });
     }
 
+    const data = await exchangeCodeForTokens(session.provider, session.code, ctx);
+
     // delete session before returning data
     await removeSession(id, ctx);
-
-    // TODO: exchange code for tokens
 
     return new Response(JSON.stringify({
       refresh_token: '',
@@ -85,7 +88,7 @@ export const poll: Route = async (req, ctx) => {
       expires_in: 0
     }), {
       headers: {
-        'content-type': 'application/json'
+        'content-type': ContentType.JSON
       }
     });
 
