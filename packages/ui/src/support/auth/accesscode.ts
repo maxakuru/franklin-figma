@@ -29,24 +29,25 @@ const ENDPOINT = process.env.AUTH_ENDPOINT;
 function doFetch(
   provider: AuthProvider,
   path: string,
-  query: Record<string, string> = {},
   init: RequestInit = {},
+  query: Record<string, string> = {},
 ): CancelablePromise<Response> {
+  query['provider'] = provider;
   const params = new URLSearchParams(query);
   const paramStr = params.toString();
-  const url = `${ENDPOINT}/api/auth/${provider}${path}${paramStr ? `?${paramStr}` : ''}`;
+  const url = `${ENDPOINT}/api/auth${path}?${paramStr}`;
   console.debug('[auth] doFetch() url: ', url);
   return cancelableFetch(url, init);
 }
 
 async function pollForCode(
-  provider: AuthProvider,
-  id: string,
+  location: string,
   ctx: ProgressContext,
 ): Promise<string> {
-  const resp = await poll(`${ENDPOINT}/api/auth/${provider}/poll?id=${id}`, ctx);
-  const { code } = await resp.json();
-  return code;
+  const resp = await poll(location, ctx);
+  const data = await resp.json();
+  console.log('polled for data: ', data);
+  return data.access_token;
 }
 
 /**
@@ -56,41 +57,37 @@ export async function authenticate(
   provider: AuthProvider,
   ctx: ProgressContext,
 ): Promise<AuthData> {
-  let code: string;
+  let data: any;
   try {
-    const resp = await doFetch(provider, '/session');
-    const { url, id } = await resp.json();
+    const resp = await doFetch(provider, '/session', { method: 'POST' });
+    if (!resp.ok) {
+      throw makePublicError(`Failed to authenticate: ${resp.status}`);
+    }
+
+    const { url } = await resp.json();
+    const pollUrl = resp.headers.get('location');
     openBrowser(url);
-    code = await pollForCode(provider, id, ctx);
+    data = await pollForCode(pollUrl, ctx);
   } catch (e) {
     throw setErrorMessage(e, 'Failed to authenticate.');
   }
 
-  if (!code) {
+  if (!data) {
     throw makePublicError('Invalid code');
   }
 
-  return newAccessToken(provider, code);
+  return makeAuthData(data);
 }
 
-async function newAccessToken(
-  provider: AuthProvider,
-  code: string,
-): Promise<AuthData> {
-  try {
-    const grant_type = 'authorization_code';
-    const resp = await doFetch(provider, '/token', { code, grant_type });
-    const data = await resp.json();
-
-    data.accessToken = data.access_token;
-    data.expiresIn = data.expires_in;
-    data.expiresAt = new Date(+Date.now() + (data.expiresIn * 1000));
-    data.refreshToken = data.refresh_token;
-    data.tokenType = data.token_type;
-    return data;
-  } catch (e) {
-    throw setErrorMessage(e, 'Failed to fetch access token.');
-  }
+function makeAuthData(
+  data: any
+): AuthData {
+  data.accessToken = data.access_token;
+  data.expiresIn = data.expires_in;
+  data.expiresAt = new Date(Date.now() + (data.expiresIn * 1000));
+  data.refreshToken = data.refresh_token;
+  data.tokenType = data.token_type;
+  return data;
 }
 
 export async function revokeAccessToken(provider: AuthProvider, token: string): Promise<void> {
@@ -118,7 +115,7 @@ export async function refreshAccessToken(
     const grant_type = 'refresh_token';
     let data: AnyOk;
     try {
-      const resp = await doFetch(provider, '/token', { refresh_token: refreshToken, grant_type });
+      const resp = await doFetch(provider, '/token', undefined, { refresh_token: refreshToken, grant_type });
       data = await resp.json();
     } catch (e: AnyOk) {
       if (isStrictlyObject(e.response) && e.response.status === 400) {
@@ -127,14 +124,7 @@ export async function refreshAccessToken(
       throw e;
     }
 
-    data.accessToken = data.access_token;
-    data.expiresIn = data.expires_in;
-    data.expiresAt = new Date(Date.now() + (data.expiresIn * 1000));
-    if (data.refresh_token) {
-      data.refreshToken = data.refresh_token;
-    }
-    data.tokenType = data.token_type;
-    return data;
+    return makeAuthData(data);
   } catch (e) {
     throw setErrorMessage(e, 'Failed to refresh access token.');
   }

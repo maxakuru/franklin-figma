@@ -32,7 +32,7 @@ export async function fetchUpstream(url: string, requestInit: RequestInit, ctx: 
 
   let resp = await fetch(req, { cf: { cacheTtl: 60 } });
   resp = new Response(resp.body, resp);
-  resp.headers.set('access-control-allow-origin', ctx.env.ENDPOINT);
+  resp.headers.set('access-control-allow-origin', ctx.env.UI_ENDPOINT);
   resp.headers.delete('age');
   resp.headers.delete('x-robots-tag');
   return resp;

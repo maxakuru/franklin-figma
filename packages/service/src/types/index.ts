@@ -13,7 +13,8 @@ export interface Invocation {
 
 export interface Env {
   UPSTREAM: string;
-  ENDPOINT: string;
+  UI_ENDPOINT: string; // frontend endpoint for cors
+  ENDPOINT: string; // current service endpoint
   GOOGLE_CLIENT_ID: string;
   GOOGLE_CLIENT_SECRET: string;
   GOOGLE_API_KEY: string;

@@ -7,24 +7,26 @@ import { exchangeCodeForTokens, isValidProvider, makeAuthUrl } from "./providers
 
 export const create: Route = async (req, ctx) => {
   const { provider } = req.query;
-  const { ENDPOINT } = ctx.env;
+  const { ENDPOINT, UI_ENDPOINT } = ctx.env;
   if (!isValidProvider(provider)) {
     return errorResponse(400, 'invalid or missing provider');
   }
 
   const { id, readKey, writeKey } = await createSession(provider, ctx);
-  const url = makeAuthUrl(provider, createState({ id, writeKey, provider }), ctx);
+  const redirectUrl = makeAuthUrl(provider, createState({ id, writeKey, provider }), ctx);
+  const url = `${UI_ENDPOINT}/auth/login?redirectUrl=${encodeURIComponent(redirectUrl)}&p=${provider}&k=${writeKey}`;
 
   return new Response(JSON.stringify({
     id,
     readKey,
-    writeKey
+    writeKey,
+    url
   }), {
     status: 201,
     headers: {
+      'access-control-allow-origin': UI_ENDPOINT,
       'content-type': ContentType.JSON,
-      location: `${ENDPOINT}/api/auth/session/${id}?k=${readKey}`, // poll url
-      'x-open-url': `${ENDPOINT}/auth/login?redirectUrl=${encodeURIComponent(url)}&p=${provider}&k=${writeKey}`
+      location: `${ENDPOINT}/api/auth/session/${id}?k=${readKey}` // poll url
     }
   });
 }
@@ -54,7 +56,7 @@ export const activate: Route = async (req, ctx) => {
 
 export const poll: Route = async (req, ctx) => {
   const { id, k: readKey } = req.params;
-  const { log } = ctx;
+  const { log, env: { UI_ENDPOINT } } = ctx;
 
   try {
     const session = await getSession(id, ctx);
@@ -82,13 +84,10 @@ export const poll: Route = async (req, ctx) => {
     // delete session before returning data
     await removeSession(id, ctx);
 
-    return new Response(JSON.stringify({
-      refresh_token: '',
-      access_token: '',
-      expires_in: 0
-    }), {
+    return new Response(JSON.stringify(data), {
       headers: {
-        'content-type': ContentType.JSON
+        'content-type': ContentType.JSON,
+        'access-control-allow-origin': UI_ENDPOINT
       }
     });
 

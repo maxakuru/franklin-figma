@@ -3,6 +3,9 @@ import handleRequest from './handler';
 import type { Env } from './types';
 
 const setupEnv = (env: Env): Env => {
+  env.ENDPOINT = process.env.ENDPOINT as string;
+  env.UI_ENDPOINT = process.env.UI_ENDPOINT as string;
+
   if (process.env.NODE_ENV !== 'development') {
     return env;
   }

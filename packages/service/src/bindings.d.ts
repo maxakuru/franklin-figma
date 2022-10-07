@@ -9,6 +9,7 @@ declare global {
       GOOGLE_CLIENT_ID: string;
       GOOGLE_CLIENT_SECRET: string;
       GOOGLE_DEVICECODE_CLIENT_SECRET: string;
+      UI_ENDPOINT: string;
       ENDPOINT: string;
     }
   }

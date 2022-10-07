@@ -7,8 +7,6 @@ export const login: Route = async (req, ctx) => {
   const { p: provider, k: writeKey, redirectUrl } = req.query;
   const { env, url } = ctx;
 
-  console.log('query: ', req.query);
-
   if (!writeKey || !isValidProvider(provider) || !redirectUrl) {
     return redirect(`/auth/failure${provider ? `?p=${provider}` : ''}`, ctx);
   }

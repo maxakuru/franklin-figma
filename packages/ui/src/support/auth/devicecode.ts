@@ -29,10 +29,13 @@ import type {
   AuthData,
   AuthProvider,
   DeviceCodeData,
+  OAuthFlow,
   RefreshedTokenData,
 } from './types';
 import { openBrowser } from '../figma';
 import { AnyOk, ProgressContext } from '../../types';
+
+const flow: OAuthFlow = (process.env.OAUTH_FLOW ?? 'access_code') as OAuthFlow;
 
 const MICROSOFT_TENANT_ID = process.env.MICROSOFT_TENANT_ID;
 const MICROSOFT_CLIENT_ID = process.env.MICROSOFT_CLIENT_ID;
@@ -43,16 +46,18 @@ const AUTH_ENDPOINT = process.env.AUTH_ENDPOINT;
 const UI_ENDPOINT = process.env.UI_ENDPOINT;
 const MIN_POLL_INTERVAL = 5; // seconds
 
-if (!MICROSOFT_TENANT_ID) {
-  throw makePublicError(
-    'Build Error: Missing Microsoft OAuth tenant ID. Set using env variable `MICROSOFT_TENANT_ID`.',
-  );
-}
+if (flow === 'device_code') {
+  if (!MICROSOFT_TENANT_ID) {
+    throw makePublicError(
+      'Build Error: Missing Microsoft OAuth tenant ID. Set using env variable `MICROSOFT_TENANT_ID`.',
+    );
+  }
 
-if (!MICROSOFT_CLIENT_ID) {
-  throw makePublicError(
-    'Build Error: Missing Microsoft OAuth client ID. Set using env variable `MICROSOFT_CLIENT_ID`.',
-  );
+  if (!MICROSOFT_CLIENT_ID) {
+    throw makePublicError(
+      'Build Error: Missing Microsoft OAuth client ID. Set using env variable `MICROSOFT_CLIENT_ID`.',
+    );
+  }
 }
 
 interface AuthProviderConfig {
