@@ -17,7 +17,7 @@ import {
   runInAction,
 } from 'mobx';
 import { ViewId } from '../../views/ids';
-import type { WizardId } from '../../views/Wizard';
+import { WizardId } from '../../views/Wizard';
 import { AnyOk } from '../../types/util';
 import { AuthStore } from './auth.store';
 import { SelectionStore } from './selection.store';
@@ -25,17 +25,21 @@ import { SettingsStore } from './settings.store';
 import { PayloadMap } from '@franklin-figma/messages';
 import { VNode } from 'preact';
 
+const INIT_VIEW: ViewId = ViewId.Wizard;
+const INIT_WIZARD: WizardId = WizardId.setupLibrary;
+
 class _RootStore {
   ready = false;
   authStore: AuthStore = undefined;
   selectionStore: SelectionStore = undefined;
   settingsStore: SettingsStore = undefined;
 
-  viewType: ViewId = undefined;
+  viewType: ViewId = INIT_VIEW;
+  _prevViewType: ViewId = undefined;
   nodeType?: 'FORM' | 'PAGE' = undefined;
   nodeId?: string = undefined;
   viewReady: boolean = false;
-  wizardId: WizardId | undefined = undefined;
+  wizardId: WizardId | undefined = INIT_WIZARD;
 
   initPayload: PayloadMap['ui:init'] = undefined;
 
@@ -49,6 +53,8 @@ class _RootStore {
   private _initPromise: Promise<void>;
 
   constructor() {
+    console.log('[ui/stores/root] constructor');
+
     this.authStore = new AuthStore(this);
     this.selectionStore = new SelectionStore(this);
     this.settingsStore = new SettingsStore(this);
@@ -74,7 +80,8 @@ class _RootStore {
       setInitPayload: action,
       setTheme: action,
       pushOverlay: action,
-      openWizard: action
+      openWizard: action,
+      closeWizard: action
     });
 
     this._initPromise = this._init();
@@ -85,8 +92,17 @@ class _RootStore {
   }
 
   openWizard(id: WizardId) {
+    if (!this._prevViewType) {
+      this._prevViewType = this.viewType;
+    }
     this.viewType = ViewId.Wizard;
     this.wizardId = id;
+  }
+
+  closeWizard() {
+    this.viewType = this._prevViewType;
+    this._prevViewType = undefined;
+    this.wizardId = undefined;
   }
 
   pushOverlay(overlay: VNode) {
