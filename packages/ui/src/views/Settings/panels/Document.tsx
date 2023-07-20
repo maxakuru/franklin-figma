@@ -1,16 +1,21 @@
-import { Text, View } from '@adobe/react-spectrum';
-// import { observer } from 'mobx-preact';
-// import { observer } from 'mobx-react-lite';
+import { Text, ActionButton, ButtonGroup } from '@adobe/react-spectrum';
 import { observer } from '@franklin-figma/mobx-preact-lite';
 
 import { useRootStore } from '../../../state/provider';
+import Edit from '@spectrum-icons/workflow/Edit';
 
 export const DocumentPanel = observer(() => {
-  const { authStore, settingsStore } = useRootStore();
-
+  const store = useRootStore();
+  const { authStore, settingsStore } = store;
+ 
   return (
-    <View>
-      <Text>document</Text>
-    </View>
+    <>
+      <ButtonGroup>
+        <ActionButton onPress={() => store.openWizard('setupLibrary')}>
+            <Edit />
+            <Text>Setup Library</Text>
+          </ActionButton>
+      </ButtonGroup>
+    </>
   );
 });

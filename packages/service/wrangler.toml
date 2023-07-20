@@ -7,7 +7,7 @@ workers_dev = true
 compatibility_date = "2022-06-13"
 compatibility_flags = []
 kv_namespaces = [
-  { binding = "SESSIONS", id = "0173b103f3814969b2bece9f00fb6622" }
+  { binding = "SESSIONS", id = "0173b103f3814969b2bece9f00fb6622", preview_id = "0173b103f3814969b2bece9f00fb6622" }
 ]
 
 [build]
@@ -17,7 +17,7 @@ watch_dir = "./src"
 
 [env.stage]
 kv_namespaces = [
-  { binding = "SESSIONS", id = "0173b103f3814969b2bece9f00fb6622" }
+  { binding = "SESSIONS", id = "0173b103f3814969b2bece9f00fb6622", preview_id = "0173b103f3814969b2bece9f00fb6622" }
 ]
 
 [env.stage.build]
@@ -26,7 +26,7 @@ command = "NODE_ENV=stage npm run build"
 
 [env.production]
 kv_namespaces = [
-  { binding = "SESSIONS", id = "0173b103f3814969b2bece9f00fb6622" }
+  { binding = "SESSIONS", id = "0173b103f3814969b2bece9f00fb6622", preview_id = "0173b103f3814969b2bece9f00fb6622" }
 ]
 
 [env.production.build]

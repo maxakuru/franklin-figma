@@ -1,6 +1,6 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { build } from 'esbuild';
+import { context } from 'esbuild';
 import { exec } from 'child_process'
 
 const __filename = fileURLToPath(import.meta.url);
@@ -23,26 +23,35 @@ const emitDeclaration = async () => {
   });
 } 
 
-const onRebuild = async (error, result) => {
-  if (error) console.error('watch build failed: ', error);
-  else if (result.warnings.length) console.warn(`watch build succeeded with ${result.warnings.length} warnings: `, result);
-  else {
-    await emitDeclaration();
-    console.debug('watch build succeeded');
+const onRebuildPlugin = {
+  name: 'onrebuild-plugin',
+  setup({
+    onEnd
+  }) {
+      onEnd(async ({ errors, warnings }) => {
+        if (errors.length) console.error('watch build failed: ', errors);
+        else if (warnings.length) console.warn(`watch build succeeded with ${warnings.length} warnings: `, warnings);
+        else {
+          await emitDeclaration();
+          console.debug('watch build succeeded');
+        }
+      });
   }
-};
+}
 
 try {
-  await build({
+  const ctx = await context({
     bundle: true,
     sourcemap: dev ? 'inline' : false,
     format: 'esm',
-    watch: watch ? { onRebuild } : false,
     target: 'es2017',
     define: {},
     loader: {
       '.svg': 'text'
     },
+    plugins: [
+      watch && onRebuildPlugin
+    ].filter(p => !!p),
     external: ['@franklin-figma/messages'],
     minify: !dev,
     treeShaking: true,
@@ -53,6 +62,13 @@ try {
   });
 
   await emitDeclaration();
+
+  if(watch) {
+    await ctx.watch();
+  } else {
+    await ctx.rebuild();
+    await ctx.dispose();
+  }
   
 } catch (e) {
   console.error('[widgets] build failed: ', e);

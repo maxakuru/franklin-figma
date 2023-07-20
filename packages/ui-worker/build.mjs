@@ -1,6 +1,6 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { build } from 'esbuild';
+import { context } from 'esbuild';
 import { exec } from 'child_process';
 import { config as configEnv } from 'dotenv';
 import { messageBusPlugin } from '@franklin-figma/vendor';
@@ -26,20 +26,23 @@ const emitDeclaration = async () => {
   });
 } 
 
-const onRebuild = (pkg) => async (error, result) => {
-  if (error) {
-    console.error('watch build failed: ', error);
+const onRebuildPlugin = (pkg) => ({
+  name: 'onrebuild-plugin',
+  setup({
+    onEnd
+  }) {
+      onEnd(async ({ errors, warnings }) => {
+        if (errors.length) console.error('watch build failed: ', errors);
+        else if (warnings.length) console.warn(`watch build succeeded with ${warnings.length} warnings: `, warnings);
+        else {
+          if(pkg === 'api') {
+            await emitDeclaration();
+          }
+          console.debug('watch build succeeded');
+        }
+      });
   }
-  else if (result.warnings.length) {
-    console.warn(`watch build succeeded with ${result.warnings.length} warnings: `, result);
-  }
-  else {
-    if(pkg === 'api') {
-      await emitDeclaration();
-    }
-    console.debug('watch build succeeded');
-  }
-};
+})
 
 try {
   const common = {
@@ -53,29 +56,39 @@ try {
     conditions: ['worker', 'browser'],
     tsconfig: path.resolve(__dirname, './tsconfig.json'),
   };
-  await Promise.all([
-    build({
+  const [apiCtx, workerCtx] = await Promise.all([
+    context({
       ...common,
-      watch: watch ? { onRebuild: onRebuild('api') } : false,
       outdir: path.resolve(__dirname, 'dist'),
       entryPoints: [
         path.resolve(__dirname, 'src/api/index.ts'),
       ],
+      plugins: [
+        watch && onRebuildPlugin('api')
+      ].filter(p => !!p)
     }), 
-    build({
+    context({
       ...common,
-      watch: watch ? { onRebuild: onRebuild('ui') } : false,
       outdir: path.resolve(__dirname, '../../public/plugin/worker'),
       plugins: [
-        messageBusPlugin
-      ],
+        messageBusPlugin,
+        watch && onRebuildPlugin('worker')
+      ].filter(p => !!p),
       entryPoints: [
         path.resolve(__dirname, 'src/ui/index.ts')
-      ]
+      ],
     }), 
   ]);
 
   await emitDeclaration();
+
+  if(watch) {
+    await Promise.all([apiCtx.watch(), workerCtx.watch()]);
+  } else {
+    await Promise.all([apiCtx.rebuild(), workerCtx.rebuild()]);
+    await Promise.all([apiCtx.dispose(), workerCtx.dispose()]);
+  }
+
 
 } catch (e) {
   console.error('[ui-worker] build failed: ', e);

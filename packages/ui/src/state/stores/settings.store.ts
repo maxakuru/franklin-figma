@@ -8,9 +8,11 @@ import { BaseStore } from './BaseStore';
 import type { RootStore } from './root.store';
 import { PanelId } from '../../views/Settings/panels';
 
+
 export class SettingsStore extends BaseStore {
   enabled: boolean = false;
   panelId: string = undefined;
+  libraryURL: string | undefined = undefined;
 
   constructor(root: RootStore) {
     super(root);
@@ -18,10 +20,11 @@ export class SettingsStore extends BaseStore {
     makeObservable(this, {
       enabled: observable,
       panelId: observable,
+      libraryURL: observable,
       nodePanelEnabled: computed,
       enabledPanels: computed,
       enable: action,
-      setPanelId: action
+      setPanelId: action,
     });
   }
 
@@ -72,7 +75,7 @@ export class SettingsStore extends BaseStore {
    * Set initial state
    */
   onInit() {
-    console.debug('[SettingsStore] ready!');
+    console.debug('[ui/stores/settings] ready!');
   }
 
   /**

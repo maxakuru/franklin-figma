@@ -1,6 +1,4 @@
 import { View, Text } from '@adobe/react-spectrum';
-// import { observer } from 'mobx-preact';
-// import { observer } from 'mobx-react-lite';
 import { observer } from '@franklin-figma/mobx-preact-lite';
 
 import { useRootStore } from '../../../state/provider';

@@ -6,20 +6,18 @@
   "type": "module",
   "scripts": {
     "build": "node build.mjs",
-    "dev": "NODE_ENV=development miniflare --port 3001 --live-reload --debug --modules dist/index.mjs",
-    "dev:remote": "NODE_ENV=development UPSTREAM='https://main--franklin-figma--maxakuru.hlx.live' wrangler dev --port 3001 --env stage",
+    "dev": "NODE_ENV=development wrangler dev --port 3001 --live-reload",
+    "dev:remote": "NODE_ENV=development UPSTREAM='https://main--franklin-figma--maxakuru.hlx.live' wrangler dev --remote --port 3001 --env stage",
     "deploy": "NODE_ENV=production wrangler publish --env production"
   },
   "author": "",
   "license": "",
   "devDependencies": {
-    "esbuild": "0.15.7",
-    "wrangler": "2.1.10",
-    "@cloudflare/workers-types": "3.16.0",
-    "@types/uuid": "8.3.4"
+    "esbuild": "0.18.14",
+    "wrangler": "3.3.0",
+    "@cloudflare/workers-types": "4.20230717.0"
   },
   "dependencies": {
-    "itty-router": "2.6.6",
-    "uuid": "9.0.0"
+    "itty-router": "4.0.14"
   }
 }

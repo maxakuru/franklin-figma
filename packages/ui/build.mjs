@@ -1,6 +1,6 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { build } from 'esbuild';
+import { context } from 'esbuild';
 import { config as configEnv } from 'dotenv';
 import { preactPlugin, messageBusPlugin } from '@franklin-figma/vendor';
 
@@ -12,16 +12,32 @@ configEnv({ path: path.resolve(__dirname, './.env') });
 const dev = process.env.NODE_ENV === 'development';
 const watch = process.argv.includes('--watch') || process.argv.includes('-w');
 
-const onRebuild = async (error, result) => {
-  if (error) {
-    console.error('watch build failed: ', error);
+const onRebuildPlugin = {
+  name: 'onrebuild-plugin',
+  setup({
+    onEnd
+  }) {
+      onEnd(({ errors, warnings }) => {
+        if (errors.length) console.error('watch build failed: ', errors);
+        else if (warnings.length) console.warn(`watch build succeeded with ${warnings.length} warnings: `, warnings);
+        else console.debug('watch build succeeded');
+      });
   }
-  else if (result.warnings.length) {
-    console.warn(`watch build succeeded with ${result.warnings.length} warnings: `, result);
-  }
-  else {
-    console.debug('watch build succeeded');
-  }
+}
+
+const spectrumUIPlugin = {
+  name: 'spectrum-ui-plugin',
+  setup({ onResolve }) {
+    onResolve({ filter: /^@adobe\/react-spectrum-ui\/dist\/.*$/ }, (args) => {
+      const icon = args.path.split('/').pop();
+      console.log('icon: ', icon);
+      return {
+        path: path.resolve(__dirname, `../../node_modules/@adobe/react-spectrum-ui/src/${icon}`),
+        // namespace: 'ns-spectrum-ui',
+        // external: true
+      }
+    });
+  },
 };
 
 const variableEnvVars = (env) => {
@@ -56,28 +72,32 @@ const variableEnvVars = (env) => {
 };
 
 try {
-  await build({
+  const ctx = await context({
     bundle: true,
     sourcemap: dev ? 'inline': false,
     format: 'esm',
     assetNames: '[dir][name]',
-    watch: watch ? { onRebuild } : false,
-    target: 'es2017',
+    target: 'es2020',
+    loader: { '.js': 'jsx' },
+    jsxFactory: 'h',
+    jsxFragment: 'Fragment',
     external: ['preact', '@franklin-figma/messages'],
     define: {
       'process.env.OAUTH_FLOW': JSON.stringify(process.env.OAUTH_FLOW ?? 'access_code'),
-      'process.env.MICROSOFT_TENANT_ID': JSON.stringify(process.env.MICROSOFT_TENANT_ID),
-      'process.env.MICROSOFT_CLIENT_ID': JSON.stringify(process.env.MICROSOFT_CLIENT_ID),
-      'process.env.GOOGLE_CLIENT_ID': JSON.stringify(process.env.GOOGLE_CLIENT_ID),
-      'process.env.GOOGLE_DEVICECODE_CLIENT_ID': JSON.stringify(process.env.GOOGLE_DEVICECODE_CLIENT_ID),
+      'process.env.MICROSOFT_TENANT_ID': JSON.stringify(process.env.MICROSOFT_TENANT_ID ?? ''),
+      'process.env.MICROSOFT_CLIENT_ID': JSON.stringify(process.env.MICROSOFT_CLIENT_ID ?? ''),
+      'process.env.GOOGLE_CLIENT_ID': JSON.stringify(process.env.GOOGLE_CLIENT_ID ?? ''),
+      'process.env.GOOGLE_DEVICECODE_CLIENT_ID': JSON.stringify(process.env.GOOGLE_DEVICECODE_CLIENT_ID ?? ''),
       'process.env.PLUGIN_ID': JSON.stringify(process.env.PLUGIN_ID),
       'process.env.DEV': JSON.stringify(dev),
       ...variableEnvVars(process.env.NODE_ENV),
     },
     plugins: [
+      // spectrumUIPlugin,
       preactPlugin,
-      messageBusPlugin
-    ],
+      messageBusPlugin,
+      watch && onRebuildPlugin
+    ].filter(p => Boolean(p)),
     minify: !dev,
     treeShaking: true,
     conditions: ['worker', 'browser'],
@@ -85,6 +105,13 @@ try {
     outdir: path.resolve(__dirname, '../../public/plugin/ui'),
     tsconfig: path.resolve(__dirname, './tsconfig.json'),
   });
+
+  if(watch) {
+    await ctx.watch();
+  } else {
+    await ctx.rebuild();
+    await ctx.dispose();
+  }
 
   // if(!watch) {
   //   // build react into web ui

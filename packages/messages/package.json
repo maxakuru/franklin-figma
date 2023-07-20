@@ -12,6 +12,6 @@
   "author": "",
   "license": "",
   "dependencies": {
-    "@figma/plugin-typings": "1.51.0"
+    "@figma/plugin-typings": "1.71.0"
   }
 }

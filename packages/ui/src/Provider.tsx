@@ -21,7 +21,7 @@ class ErrorBoundary extends PureComponent<AnyOk> {
   }
 
   componentDidCatch(error: AnyOk, errorInfo: AnyOk) {
-    console.log('[ErrorBoundary] componentDidCatch()', error, errorInfo);
+    console.log('[ErrorBoundary] componentDidCatch()', error, errorInfo, this.state, this.props);
     // TODO: report error back to plugin backend
   }
 

@@ -36,7 +36,7 @@ export class SelectionStore extends BaseStore {
       return figma.currentPage.selection;
     });
 
-    console.log('[stores/selection] enabled: ', selectedNodes);
+    console.log('[ui/stores/selection] enabled: ', selectedNodes);
     this.setNodes(selectedNodes as SceneNode[]);
 
     this.discard(
@@ -61,7 +61,7 @@ export class SelectionStore extends BaseStore {
    * Set initial state
    */
   onInit() {
-    console.debug('[SelectionStore] ready!');
+    console.debug('[ui/stores/selection] ready!');
   }
 
   /**

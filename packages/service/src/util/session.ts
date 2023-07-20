@@ -1,6 +1,5 @@
 import type { Context, Session, SessionActive, SessionPending } from "types";
 import { SessionState } from "def";
-import { v4 as uuidv4 } from 'uuid';
 import type { AuthProvider } from "routes/auth/types";
 
 export const SESSION_DURATION = 300000; // 15 mins in seconds
@@ -11,11 +10,11 @@ function isExpired(session: Session): boolean {
 
 export async function createSession(provider: AuthProvider, ctx: Context) {
   const { SESSIONS } = ctx.env;
-  const id = uuidv4();
+  const id = crypto.randomUUID();
 
   // TODO: better keys
-  const readKey = uuidv4();
-  const writeKey = uuidv4();
+  const readKey = crypto.randomUUID();
+  const writeKey = crypto.randomUUID();
 
   const session: SessionPending = {
     id,

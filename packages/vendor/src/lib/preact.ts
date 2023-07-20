@@ -10,7 +10,9 @@ export {
   Fragment,
   h,
   hydrate,
+  options
 } from 'preact';
+
 export * from 'preact/hooks';
 // @ts-ignore
 export * from 'preact/compat';

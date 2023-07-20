@@ -1,6 +1,6 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { build } from 'esbuild';
+import { context } from 'esbuild';
 import { exec } from 'child_process'
 import { config as configEnv } from 'dotenv';
 
@@ -25,18 +25,21 @@ const emitDeclaration = async () => {
   });
 } 
 
-const onRebuild = async (error, result) => {
-  if (error) {
-    console.error('watch build failed: ', error);
+const onRebuildPlugin = {
+  name: 'onrebuild-plugin',
+  setup({
+    onEnd
+  }) {
+      onEnd(async ({ errors, warnings }) => {
+        if (errors.length) console.error('watch build failed: ', errors);
+        else if (warnings.length) console.warn(`watch build succeeded with ${warnings.length} warnings: `, warnings);
+        else {
+          await emitDeclaration();
+          console.debug('watch build succeeded');
+        }
+      });
   }
-  else if (result.warnings.length) {
-    console.warn(`watch build succeeded with ${result.warnings.length} warnings: `, result);
-  }
-  else {
-    await emitDeclaration();
-    console.debug('watch build succeeded');
-  }
-};
+}
 
 const variableEnvVars = (env) => {
   if (typeof env === 'undefined') {
@@ -70,13 +73,16 @@ const variableEnvVars = (env) => {
 };
 
 try {
-  await build({
+  const libCtx = await context({
     bundle: true,
     minify: true,
     treeShaking: false,
     keepNames: true,
     format: 'esm',
-    target: 'es2017',
+    target: 'esnext',
+    plugins: [
+      watch && onRebuildPlugin
+    ].filter(p => !!p),
     define: {
       'process.env.PLUGIN_ID': JSON.stringify(process.env.PLUGIN_ID),
       ...variableEnvVars('production')
@@ -91,18 +97,21 @@ try {
     outdir: path.resolve(__dirname, '../../public/vendor'),
   });
 
-  await build({
+  const pluginCtx = await context({
     bundle: true,
     sourcemap: dev ? 'inline': false,
     format: 'esm',
+    platform: 'node',
     assetNames: '[dir][name]',
-    watch: watch ? { onRebuild } : false,
-    target: 'es2017',
+    target: 'esnext',
     define: {
       'process.env.PLUGIN_ID': JSON.stringify(process.env.PLUGIN_ID),
       'process.env.DEV': JSON.stringify(dev),
       ...variableEnvVars(process.env.NODE_ENV),
     },
+    plugins:[
+      watch && onRebuildPlugin
+    ].filter(p => !!p),
     minify: !dev,
     treeShaking: true,
     conditions: ['worker', 'browser'],
@@ -111,6 +120,13 @@ try {
     tsconfig: path.resolve(__dirname, 'tsconfig.json'),
   });
   await emitDeclaration();
+
+  if(watch) {
+    await Promise.all([libCtx.watch(), pluginCtx.watch()]);
+  } else {
+    await Promise.all([libCtx.rebuild(), pluginCtx.rebuild()]);
+    await Promise.all([libCtx.dispose(), pluginCtx.dispose()]);
+  }
   
 } catch(e) {
   console.error('[vendor] build failed: ', e);

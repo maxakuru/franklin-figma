@@ -24,7 +24,7 @@ export class SampleStore_IGNORE extends BaseStore {
    * Set initial state
    */
   async onInit(): Promise<void> {
-    console.debug('[Store] ready!');
+    console.debug('[ui/stores/sample] ready!');
   }
 
   /**

@@ -72,7 +72,7 @@ interface PrivatePayloadMap extends AnyPrivatePayloadMap, PayloadMap {
   __execute__: {
     id: number;
     fn?: string;
-    args?: Record<string, unknown>;
+    args?: string;
   } | {
     id: number;
     ret?: any;
@@ -136,7 +136,10 @@ class MessageBus {
     const { type } = message as BaseMessage<typeof message.type>;
     const { payload } = message as BaseMessage & { payload: PrivatePayloadMap[typeof type] };
     if (type === '__execute__') {
-      const { id, fn, args = {} } = payload;
+      const { id, fn, args: argStr } = payload;
+      const args = typeof argStr === 'object' ? argStr : argStr ? JSON.parse(argStr as string) : {};
+      console.log(`[MessageBus] _incomingBackendInternal(${args}) id=${id}`);
+
       if (fn) {
         // request
         const scopeFn = new Function('figma', ...Object.keys(args), `return (${fn})(figma);`);
@@ -182,7 +185,10 @@ class MessageBus {
     const { payload } = message as BaseMessage & { payload: PrivatePayloadMap[typeof type] };
 
     if (type === '__execute__') {
-      const { id, fn, args = {} } = payload;
+      const { id, fn, args: argStr } = payload;
+      const args = typeof argStr === 'object' ? argStr : argStr ? JSON.parse(argStr as string) : {};
+      console.log(`[MessageBus] _incomingFrontendInternal(${args}) id=${id}`);
+
       if (fn) {
         // request
         // NOTE: scope/signature is different
@@ -263,7 +269,13 @@ class MessageBus {
     TRet = ReturnType<TFunc>
   >(fn: TFunc, args?: Record<string, unknown>): Promise<TRet> {
     const id = this.#execId++;
-    this._sendExecute({ id, fn: fn.toString(), args });
+    console.log(`[MessageBus] execute(${args}) id='${id}'`);
+
+    this._sendExecute({
+      id,
+      fn: fn.toString(),
+      args: args ? JSON.stringify(args) : undefined
+    });
 
     let res, rej;
     const prom = new Promise((resolve, reject) => {
@@ -299,11 +311,13 @@ class MessageBus {
   private _send<T extends MessageType | PrivateMessageType>(type: T, payload: PrivatePayloadMap[T]) {
     try {
       if (this.#frontend) {
+        console.log(`[MessageBus] _send(frontend) type='${type}'`);
         parent.postMessage({
           pluginMessage: { type, payload },
           pluginId: globalThis.PLUGIN_ID
         }, dev ? '*' : figmaHost);
       } else {
+        console.log(`[MessageBus] _send(backend) type='${type}'`);
         figma.ui.postMessage({ type, payload }, { origin: dev ? '*' : globalThis.UI_ENDPOINT });
       }
     } catch (e) {

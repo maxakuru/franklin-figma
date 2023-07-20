@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "AEM Franklin Figma Plugin",
   "main": "dist/index.js",
-  "types": "../../mobx-react-lite/dist/index.d.ts",
+  "types": "./node_modules/mobx-react-lite/dist/index.d.ts",
   "type": "module",
   "scripts": {
     "build": "node build.mjs",
@@ -12,12 +12,12 @@
   "author": "",
   "license": "",
   "devDependencies": {
-    "tslib": "2.4.0"
+    "tslib": "2.6.0"
   },
   "dependencies": {
-    "esbuild": "0.15.7",
-    "mobx": "^6.6.2",
-    "mobx-react-lite": "^3.4.0",
-    "preact": "^10.11.0"
+    "esbuild": "0.18.14",
+    "mobx": "6.10.0",
+    "mobx-react-lite": "3.4.0",
+    "preact": "10.16.0"
   }
 }

@@ -91,7 +91,10 @@ export class AuthStore extends BaseStore {
   }
 
   async onInit(): Promise<void> {
+    console.info('[ui/stores/auth] onInit()');
     let data: AuthData = await retrieve('google_auth_data');
+    console.log('[ui/stores/auth] google_auth_data: ', data);
+
     if (data && data.refreshToken) {
       runInAction(() => {
         this.authData.google = restoreAuthData(data);
@@ -99,6 +102,8 @@ export class AuthStore extends BaseStore {
     }
 
     data = await retrieve('microsoft_auth_data');
+    console.log('[ui/stores/auth] microsoft_auth_data: ', data);
+
     if (data && data.refreshToken) {
       runInAction(() => {
         this.authData.microsoft = restoreAuthData(data);
@@ -118,12 +123,17 @@ export class AuthStore extends BaseStore {
   }
 
   async setAuthData(provider: AuthProvider, data: Partial<AuthData>): Promise<AuthData> {
-    this.authData[provider] = {
+    let authData: AuthData | undefined = {
       ...(this.authData[provider] ?? {}),
       ...data,
     } as AuthData;
-    await setOrRemove(`${provider}_auth_data`, this.authData[provider]);
-    return this.authData[provider];
+    this.authData[provider] = authData
+
+    if (!authData.accessToken && !authData.refreshToken) {
+      authData = undefined;
+    }
+    await setOrRemove(`${provider}_auth_data`, authData);
+    return authData;
   }
 
   async clearAuthData(provider: AuthProvider): Promise<void> {

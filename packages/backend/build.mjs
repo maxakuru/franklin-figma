@@ -1,6 +1,6 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { build } from 'esbuild';
+import { context } from 'esbuild';
 import { config as configEnv } from 'dotenv';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -12,11 +12,18 @@ process.env.NODE_ENV ??= 'development';
 const dev = process.env.NODE_ENV === 'development';
 const watch = process.argv.includes('--watch') || process.argv.includes('-w');
 
-const onRebuild = (error, result) => {
-  if (error) console.error('watch build failed: ', error);
-  else if (result.warnings.length) console.warn(`watch build succeeded with ${result.warnings.length} warnings: `, result);
-  else console.debug('watch build succeeded');
-};
+const onRebuildPlugin = {
+  name: 'onrebuild-plugin',
+  setup({
+    onEnd
+  }) {
+      onEnd(({ errors, warnings }) => {
+        if (errors.length) console.error('watch build failed: ', errors);
+        else if (warnings.length) console.warn(`watch build succeeded with ${warnings.length} warnings: `, warnings);
+        else console.debug('watch build succeeded');
+      });
+  }
+}
 
 const variableEnvVars = (env) => {
   if (typeof env === 'undefined') {
@@ -50,7 +57,7 @@ const variableEnvVars = (env) => {
 };
 
 try {
-  await build({
+  const ctx = await context({
     bundle: true,
     sourcemap: dev ? 'inline' : false,
     format: 'esm',
@@ -60,7 +67,9 @@ try {
       'process.env.DEV': JSON.stringify(dev),
       ...variableEnvVars(process.env.NODE_ENV)
     },
-    watch: watch ? { onRebuild } : false,
+    plugins: [
+      watch && onRebuildPlugin
+    ].filter(p => !!p),
     minify: !dev,
     treeShaking: true,
     conditions: ['worker', 'browser'],
@@ -68,6 +77,12 @@ try {
     outdir: path.resolve(__dirname, 'dist'),
     tsconfig: path.resolve(__dirname, 'tsconfig.json'),
   });
+  if(watch) {
+    await ctx.watch();
+  } else {
+    await ctx.rebuild();
+    await ctx.dispose();
+  }
 } catch (e) {
   console.error('[backend] build failed: ', e);
   process.exitCode = 1;

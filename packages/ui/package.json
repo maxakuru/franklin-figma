@@ -11,17 +11,17 @@
   "author": "",
   "license": "",
   "devDependencies": {
-    "@figma/plugin-typings": "1.51.0",
-    "tslib": "2.4.0",
+    "@figma/plugin-typings": "1.71.0",
+    "tslib": "2.6.0",
     "@franklin-figma/vendor": "^1.0.0",
-    "esbuild": "0.15.7"
+    "esbuild": "0.18.14"
   },
   "dependencies": {
-    "@adobe/react-spectrum": "^3.21.2",
+    "@adobe/react-spectrum": "3.28.0",
     "@franklin-figma/messages": "^1.0.0",
     "@franklin-figma/mobx-preact-lite": "^1.0.0",
-    "@spectrum-icons/workflow": "^4.0.2",
-    "mobx": "^6.6.2",
-    "preact": "^10.11.0"
+    "@spectrum-icons/workflow": "4.2.2",
+    "mobx": "6.10.0",
+    "preact": "10.16.0"
   }
 }

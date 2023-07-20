@@ -16,7 +16,8 @@ import {
   action,
   runInAction,
 } from 'mobx';
-import type { ViewId } from '../../views/ids';
+import { ViewId } from '../../views/ids';
+import type { WizardId } from '../../views/Wizard';
 import { AnyOk } from '../../types/util';
 import { AuthStore } from './auth.store';
 import { SelectionStore } from './selection.store';
@@ -34,6 +35,7 @@ class _RootStore {
   nodeType?: 'FORM' | 'PAGE' = undefined;
   nodeId?: string = undefined;
   viewReady: boolean = false;
+  wizardId: WizardId | undefined = undefined;
 
   initPayload: PayloadMap['ui:init'] = undefined;
 
@@ -51,6 +53,7 @@ class _RootStore {
     this.selectionStore = new SelectionStore(this);
     this.settingsStore = new SettingsStore(this);
 
+
     makeObservable(this, {
       ready: observable,
       viewType: observable,
@@ -60,6 +63,7 @@ class _RootStore {
       initPayload: observable,
       theme: observable,
       overlayStack: observable,
+      wizardId: observable,
 
       _init: action,
       reset: action,
@@ -69,7 +73,8 @@ class _RootStore {
       setViewReady: action,
       setInitPayload: action,
       setTheme: action,
-      pushOverlay: action
+      pushOverlay: action,
+      openWizard: action
     });
 
     this._initPromise = this._init();
@@ -77,6 +82,11 @@ class _RootStore {
 
   get whenReady(): Promise<void> {
     return this._initPromise;
+  }
+
+  openWizard(id: WizardId) {
+    this.viewType = ViewId.Wizard;
+    this.wizardId = id;
   }
 
   pushOverlay(overlay: VNode) {
@@ -88,33 +98,33 @@ class _RootStore {
   }
 
   setTheme(theme: 'dark' | 'light') {
-    console.log(`setTheme(${theme})`);
+    console.log(`[ui/stores/root] setTheme(${theme})`);
 
     this.theme = theme;
   }
 
   setNodeId(id: string) {
-    console.log(`setNodeId(${id})`);
+    console.log(`[ui/stores/root] setNodeId(${id})`);
     this.nodeId = id;
   }
 
   setNodeType(type: 'PAGE' | 'FORM') {
-    console.log(`setNodeType(${type})`);
+    console.log(`[ui/stores/root] setNodeType(${type})`);
     this.nodeType = type;
   }
 
   setViewType(type: ViewId) {
-    console.log(`setViewType(${type})`);
+    console.log(`[ui/stores/root] setViewType(${type})`);
     this.viewType = type;
   }
 
   setViewReady(ready: boolean) {
-    console.log(`setViewReady(${ready})`);
+    console.log(`[ui/stores/root] setViewReady(${ready})`);
     this.viewReady = ready;
   }
 
   setInitPayload(payload: PayloadMap['ui:init']) {
-    console.log(`setInitPayload(${payload})`);
+    console.log(`[ui/stores/root] setInitPayload(${payload})`);
     this.initPayload = payload;
   }
 
@@ -129,7 +139,7 @@ class _RootStore {
     ]);
 
     runInAction(() => {
-      console.debug('[RootStore] ready!');
+      console.debug('[ui/stores/root] ready!');
       this.ready = true;
     });
   }

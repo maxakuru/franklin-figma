@@ -1,10 +1,10 @@
-import { Router } from 'itty-router';
+import { Router, IRequest } from 'itty-router';
 import type { Context, Route } from './types';
 
 import Franklin from 'routes/franklin';
 import { AuthAPI, AuthUI } from 'routes/auth';
 
-const router = Router<Request, {}>();
+const router = Router<Request & IRequest, [Context]>();
 
 const fallback: Route = () => {
   return new Response('Not found', { status: 404 });
