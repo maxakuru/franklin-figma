@@ -22,6 +22,7 @@
     "@franklin-figma/mobx-preact-lite": "^1.0.0",
     "@spectrum-icons/workflow": "4.2.2",
     "mobx": "6.10.0",
-    "preact": "10.16.0"
+    "preact": "10.16.0",
+    "jodit": "4.0.0-beta.61"
   }
 }

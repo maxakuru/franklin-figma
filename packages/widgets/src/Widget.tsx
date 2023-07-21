@@ -195,9 +195,28 @@ export default function Widget() {
     setLock(false);
   });
 
-  const view = () => {
+  const editor = () => {
     // TODO: convert to markdown, show word-like ui with jodit
     const focusNode = figma.getNodeById(nodeId) as SceneNode;
+    const { bounds, zoom } = figma.viewport;
+    const height = Math.round(clamp(bounds.height * zoom * 0.8, 700, 600));
+    const width = Math.round(clamp(bounds.width * zoom * 0.5, 300, 800));
+
+    showUI({
+      title: `Editor`,
+      position: { 
+        x: focusNode.x + focusNode.width + 10, 
+        y: 30
+      },
+      width, 
+      height,
+      themeColors: true
+    });
+    MessageBus.once('ui:ready', () => {
+      MessageBus.send('ui:init', { nodeId, uiType: 'editor' });
+    });
+
+    return new Promise((resolve) => undefined);
   };
 
   const copy = lockGuard(() => {
@@ -236,8 +255,8 @@ export default function Widget() {
                 direction={'vertical'}
                 spacing={8}
                 horizontalAlignItems='center'>
-                  <Button variant='cta' disabled={!!lock} icon={PreviewIcon} onClick={view}>View</Button>
-                  <Button variant='primary' disabled={!!lock} icon={CopyIcon} onClick={copy}>Copy</Button>
+                  <Button variant='cta' disabled={!!lock} icon={CopyIcon} onClick={copy}>Copy</Button>
+                  <Button variant='primary' disabled={!!lock} icon={PreviewIcon} onClick={editor}>Editor</Button>
 
                   {/* <Button variant='primary' disabled={!!lock} icon={PreviewIcon} onClick={preview}>Preview</Button>
                   <Button variant='primary' disabled={!!lock} icon={SettingsIcon} onClick={configure}>Configure</Button> */}

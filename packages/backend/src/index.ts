@@ -5,7 +5,8 @@ import { wrapCommon } from './common';
 
 const HANDLERS = {
   'figma': wrapCommon(figmaHandler),
-  'figjam': wrapCommon(figjamHandler)
+  'figjam': wrapCommon(figjamHandler),
+  'dev': wrapCommon(figmaHandler),
 }
 
 const handler = HANDLERS[figma.editorType];

@@ -50,6 +50,9 @@ export interface PayloadMap extends AnyPayloadMap {
     nodeType?: 'PAGE' | 'FORM';
     nodeId?: string;
     panels?: ('node' | 'document' | 'global' | 'user')[];
+  } | {
+    uiType: 'editor';
+    nodeId?: string;
   };
   'ui:close': undefined;
 

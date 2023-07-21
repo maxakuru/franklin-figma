@@ -16,14 +16,15 @@ const App = observer(() => {
             console.log('[ui/App] init');
 
             const {
-                uiType, 
-                nodeType, 
+                uiType,  
                 nodeId
             } = payload;
 
             store.setNodeId(nodeId);
             store.setViewType(uiType);
-            store.setNodeType(nodeType);
+            if(uiType !== 'editor') {
+                store.setNodeType(payload.nodeType);
+            }
             store.setInitPayload(payload);
         });
         MessageBus.send('ui:ready');

@@ -1,9 +1,10 @@
-export type ViewId = 'config' | 'settings' | 'wizard';
+export type ViewId = 'config' | 'settings' | 'wizard' | 'editor';
 
 export const ViewId = {
   Config: 'config',
   Settings: 'settings',
-  Wizard: 'wizard'
+  Wizard: 'wizard',
+  Editor: 'editor'
 } as const;
 
 export default ViewId;
