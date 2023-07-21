@@ -6,6 +6,7 @@ import { findAncestor, clamp, showUI } from './utils';
 import GridIcon from './assets/icons/grid';
 import SettingsIcon from './assets/icons/settings';
 import PreviewIcon from './assets/icons/preview';
+import CopyIcon from './assets/icons/copy';
 
 const TESTING_INTROS = true;
 
@@ -24,7 +25,7 @@ const {
 export default function Widget() {
   const widgetId = useWidgetId();
   const [nodeId, _] = useSyncedState<string>("nodeId", undefined);
-  const [lock, setLock] = useSyncedState<false | 'initializing' | 'previewing' | 'configuring'>("lock", false);
+  const [lock, setLock] = useSyncedState<false | 'initializing' | 'previewing' | 'configuring' | 'copying'>("lock", false);
   const [nodeType, __] = useSyncedState<'PAGE'|'FORM'>("nodeType", undefined);
 
   const recenter = () => {
@@ -194,6 +195,17 @@ export default function Widget() {
     setLock(false);
   });
 
+  const view = () => {
+    // TODO: convert to markdown, show word-like ui with jodit
+    const focusNode = figma.getNodeById(nodeId) as SceneNode;
+  };
+
+  const copy = lockGuard(() => {
+    setLock('copying');
+    // TODO: same process as view, but straight to clipboard
+    setLock(false);
+  });
+
   return (
     <AutoLayout 
       direction={'vertical'}
@@ -224,8 +236,11 @@ export default function Widget() {
                 direction={'vertical'}
                 spacing={8}
                 horizontalAlignItems='center'>
-                <Button variant='cta' disabled={!!lock} icon={PreviewIcon} onClick={preview}>Preview</Button>
-                <Button variant='primary' disabled={!!lock} icon={SettingsIcon} onClick={configure}>Configure</Button>
+                  <Button variant='cta' disabled={!!lock} icon={PreviewIcon} onClick={view}>View</Button>
+                  <Button variant='primary' disabled={!!lock} icon={CopyIcon} onClick={copy}>Copy</Button>
+
+                  {/* <Button variant='primary' disabled={!!lock} icon={PreviewIcon} onClick={preview}>Preview</Button>
+                  <Button variant='primary' disabled={!!lock} icon={SettingsIcon} onClick={configure}>Configure</Button> */}
               </AutoLayout>
 
           </AutoLayout>

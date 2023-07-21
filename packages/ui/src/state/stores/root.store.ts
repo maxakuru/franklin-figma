@@ -22,7 +22,7 @@ import { AnyOk } from '../../types/util';
 import { AuthStore } from './auth.store';
 import { SelectionStore } from './selection.store';
 import { SettingsStore } from './settings.store';
-import { PayloadMap } from '@franklin-figma/messages';
+import MessageBus, { PayloadMap } from '@franklin-figma/messages';
 import { VNode } from 'preact';
 
 const INIT_VIEW: ViewId = ViewId.Wizard;
@@ -103,6 +103,11 @@ class _RootStore {
     this.viewType = this._prevViewType;
     this._prevViewType = undefined;
     this.wizardId = undefined;
+    if (!this.viewType) {
+      MessageBus.execute((figma) => {
+        figma.closePlugin();
+      });
+    }
   }
 
   pushOverlay(overlay: VNode) {
