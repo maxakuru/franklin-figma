@@ -7,12 +7,17 @@ import {
 import { BaseStore } from './BaseStore';
 import type { RootStore } from './root.store';
 import { PanelId } from '../../views/Settings/panels';
+import { retrieve, setOrRemove } from '../../support/figma';
+import { AnyOk } from 'src/types';
 
 
 export class SettingsStore extends BaseStore {
   enabled: boolean = false;
   panelId: string = undefined;
+
+  // library data
   libraryURL: string | undefined = undefined;
+  libraryBlocks: AnyOk = undefined;
 
   constructor(root: RootStore) {
     super(root);
@@ -25,7 +30,15 @@ export class SettingsStore extends BaseStore {
       enabledPanels: computed,
       enable: action,
       setPanelId: action,
+      setLibraryData: action
     });
+  }
+
+  async setLibraryData(url: string, blocks: AnyOk) {
+    this.libraryURL = url;
+    this.libraryBlocks = blocks;
+
+    await setOrRemove('library_data', { url, blocks });
   }
 
   setPanelId(id: string) {
@@ -74,8 +87,15 @@ export class SettingsStore extends BaseStore {
   /**
    * Set initial state
    */
-  onInit() {
-    console.debug('[ui/stores/settings] ready!');
+  async onInit() {
+    console.info('[ui/stores/settings] onInit()');
+    const data = await retrieve<AnyOk>('library_data');
+
+    if (data) {
+      const { url, blocks } = data;
+      this.libraryBlocks = blocks;
+      this.libraryURL = url;
+    }
   }
 
   /**
