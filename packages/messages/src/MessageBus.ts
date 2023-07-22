@@ -19,7 +19,7 @@ export type MessageType =
   | 'drop:*';
 
 /** @private */
-export type PrivateMessageType = '__execute__';
+export type PrivateMessageType = '__execute__' | '__api_backend__';
 
 type AnyMessageType = MessageType | PrivateMessageType;
 
@@ -70,9 +70,27 @@ export type AllMessagesHandler = <T extends MessageType>(type: T, payload: Paylo
 
 export type Context = PluginAPI;
 
+export interface RemoteAPI {
+  backend: {
+    test: (foo: number) => Promise<void>;
+  }
+}
+
 /** @private */
 interface PrivatePayloadMap extends AnyPrivatePayloadMap, PayloadMap {
   __execute__: {
+    id: number;
+    fn?: string;
+    args?: string;
+  } | {
+    id: number;
+    ret?: any;
+  } | {
+    id: number;
+    error?: any;
+  };
+
+  __api_backend__: {
     id: number;
     fn?: string;
     args?: string;
@@ -105,7 +123,7 @@ class MessageBus {
     "ui:close": [],
     "worker:ready": [],
     "worker:init": [],
-    "drop:*": [],
+    "drop:*": []
   };
   #wildcardHandlers: AllMessagesHandler[] = [];
   #execId: number = 0;
@@ -135,25 +153,37 @@ class MessageBus {
   /**
    * Handle an incoming internal message on the backend.
    */
-  private _incomingBackendInternal(message: BaseMessage<PrivateMessageType>): void {
+  private async _incomingBackendInternal(message: BaseMessage<PrivateMessageType>): Promise<void> {
     const { type } = message as BaseMessage<typeof message.type>;
     const { payload } = message as BaseMessage & { payload: PrivatePayloadMap[typeof type] };
-    if (type === '__execute__') {
+    if (type === '__execute__' || type.startsWith('__api_')) {
       const { id, fn, args: argStr } = payload;
       const args = typeof argStr === 'object' ? argStr : argStr ? JSON.parse(argStr as string) : {};
-      console.log(`[MessageBus] _incomingBackendInternal(${args}) id=${id}`);
+      console.log(`[MessageBus] _incomingBackendInternal(${type}) id=${id}`);
 
       if (fn) {
         // request
-        const scopeFn = new Function('figma', ...Object.keys(args), `return (${fn})(figma);`);
-        const evalFn = `(${scopeFn}).call(null, figma, ...${JSON.stringify(Object.values(args))});`;
 
-        exec(evalFn).then(ret => {
-          this._sendExecute({ id, ret: serialize(ret) });
-        }).catch((error) => {
-          this._sendExecute({ id, error });
-        });
+        if (type === '__execute__') {
+          // execute
+          const scopeFn = new Function('figma', ...Object.keys(args), `return (${fn})(figma);`);
+          const evalFn = `(${scopeFn}).call(null, figma, ...${JSON.stringify(Object.values(args))});`;
 
+          exec(evalFn).then(ret => {
+            this._sendExecute({ id, ret: serialize(ret) });
+          }).catch((error) => {
+            this._sendExecute({ id, error });
+          });
+        } else {
+          // global API
+          try {
+            const ret = await ((globalThis as any).api[fn as string] as Function).apply(null, args);
+            this._sendAPI('backend', { id, ret: serialize(ret) });
+          } catch (error) {
+            console.error('[MessageBus]  _incomingBackendInternal() global api error: ', error);
+            this._sendAPI('backend', { id, error });
+          }
+        }
       } else {
         // response
         const { ret, error } = payload;
@@ -187,7 +217,7 @@ class MessageBus {
     const { type } = message as BaseMessage<typeof message.type>;
     const { payload } = message as BaseMessage & { payload: PrivatePayloadMap[typeof type] };
 
-    if (type === '__execute__') {
+    if (type === '__execute__' || type.startsWith('__api_')) {
       const { id, fn, args: argStr } = payload;
       const args = typeof argStr === 'object' ? argStr : argStr ? JSON.parse(argStr as string) : {};
       console.log(`[MessageBus] _incomingFrontendInternal(${args}) id=${id}`);
@@ -220,13 +250,19 @@ class MessageBus {
   /**
    * Handle an incoming message on the frontend.
    */
-  private _incomingFrontend({ data }: { data: { pluginMessage: BaseMessage } }) {
+  private _incomingFrontend({ data }: { data: { pluginMessage: BaseMessage; } }) {
     // console.log('[MessageBus] _incomingFrontend() data: ', data);
     const { pluginMessage: message } = data;
-    if (isPrivateMessage(message)) {
-      this._incomingFrontendInternal(message);
+    const { figmaMessage } = data as any;
+    if (figmaMessage) {
+      // TODO: handle system messages
+      console.debug('[MessageBus] unhandled figmaMessage: ', figmaMessage);
     } else {
-      this._incoming(message as BaseMessage<MessageType>);
+      if (isPrivateMessage(message)) {
+        this._incomingFrontendInternal(message);
+      } else {
+        this._incoming(message as BaseMessage<MessageType>);
+      }
     }
   }
 
@@ -260,6 +296,10 @@ class MessageBus {
     this._send('__execute__', payload);
   }
 
+  private _sendAPI(srcTgt: 'backend', payload: PrivatePayloadMap['__api_backend__']) {
+    this._send(`__api_${srcTgt}__`, payload);
+  }
+
   /**
    * Execute some function on the backend.
    * 
@@ -274,19 +314,58 @@ class MessageBus {
     const id = this.#execId++;
     console.log(`[MessageBus] execute(${args}) id='${id}'`);
 
-    this._sendExecute({
-      id,
-      fn: fn.toString(),
-      args: args ? JSON.stringify(args) : undefined
-    });
-
     let res, rej;
     const prom = new Promise((resolve, reject) => {
       res = resolve;
       rej = reject;
     });
     this.#execPromises[id] = [prom, res, rej];
+
+    this._sendExecute({
+      id,
+      fn: fn.toString(),
+      args: args ? JSON.stringify(args) : undefined
+    });
     return prom as Promise<TRet>;
+  }
+
+  private _api: RemoteAPI = {
+    backend: new Proxy({}, {
+      get: (target, fn, recv) => {
+        return async (...args: any[]) => {
+          const id = this.#execId++;
+          console.log(`[MessageBus] _api(${args}) id='${id}'`);
+
+          let res, rej;
+          const prom = new Promise((resolve, reject) => {
+            res = resolve;
+            rej = reject;
+          });
+          this.#execPromises[id] = [prom, res, rej];
+
+          this._sendAPI('backend', {
+            id,
+            fn: fn as string,
+            args: args ? JSON.stringify(args) : undefined
+          });
+          return prom;
+        }
+      }
+    })
+  } as RemoteAPI;
+
+  get api(): RemoteAPI {
+    const api = this._api;
+    const banned = this.#frontend ? 'frontend' : 'backend';
+    try {
+      Object.defineProperty(api, banned, {
+        get: () => {
+          throw Error(`cannot access ${banned} API from ${banned}`);
+        }
+      });
+    } catch { /** noop */ }
+
+    return api;
   }
 
   /**

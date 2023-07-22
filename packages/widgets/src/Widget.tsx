@@ -1,8 +1,9 @@
 import MessageBus, { AnyFunc } from '@franklin-figma/messages';
-import { spawn } from '@franklin-figma/ui-worker';
+// import { spawn } from '@franklin-figma/ui-worker';
 
 import { Button } from './components';
 import { findAncestor, clamp, showUI } from './utils';
+
 import GridIcon from './assets/icons/grid';
 import SettingsIcon from './assets/icons/settings';
 import PreviewIcon from './assets/icons/preview';
@@ -195,12 +196,16 @@ export default function Widget() {
     setLock(false);
   });
 
-  const editor = () => {
+  const editor = async () => {
     // TODO: convert to markdown, show word-like ui with jodit
     const focusNode = figma.getNodeById(nodeId) as SceneNode;
     const { bounds, zoom } = figma.viewport;
     const height = Math.round(clamp(bounds.height * zoom * 0.8, 700, 600));
     const width = Math.round(clamp(bounds.width * zoom * 0.5, 300, 800));
+
+    // console.log('[widget] globalThis: ', globalThis);
+    // const resp = await (globalThis as any).api.test(123);
+    // console.log('[widget] resp: ', resp);
 
     showUI({
       title: `Editor`,

@@ -113,6 +113,12 @@ const TEST_HTML = `<div>
 const EditorView: FunctionalComponent = observer(() => {
   const store = useRootStore();
   useEffect(() => {
+    // TODO: impl backend api for converting frame to HTML
+    // MessageBus.api.backend.test(12344).then(res => {
+    //   console.log('[ui/editor] res: ', res);
+    // }).catch(e => {
+    //   console.log('[ui/editor] error:', e);
+    // });
     store.setViewReady(true);
   }, []);
 
