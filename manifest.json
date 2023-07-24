@@ -6,7 +6,5 @@
   "editorType": [
     "figma",
     "figjam"
-  ],
-  "containsWidget": true,
-  "widgetApi": "1.0.0"
+  ]
 }

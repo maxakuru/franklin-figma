@@ -1,5 +1,21 @@
-import { Widget } from '@franklin-figma/widgets';
+import { Widget, ENABLE_WIDGET } from '@franklin-figma/widgets';
 import MessageBus, { serialize } from '@franklin-figma/messages';
+
+function clamp(val: number, min: number, max: number) {
+  return Math.min(Math.max(val, min), max);
+}
+
+function showUI(opts: ShowUIOptions) {
+  figma.showUI(
+    `<script>
+      window.location.href = "${globalThis.UI_ENDPOINT}/plugin/ui";
+    </script>`,
+    {
+      ...opts,
+      title: `${opts.title} (AEM Franklin)`
+    }
+  );
+}
 
 function attachFigmaListeners() {
   figma.on('currentpagechange', () => {
@@ -35,8 +51,32 @@ function attachFigmaListeners() {
 
 export function wrapCommon(handler: () => void) {
   return () => {
-    figma.widget.register(Widget);
+    if (ENABLE_WIDGET) {
+      figma.widget.register(Widget);
+    }
     attachFigmaListeners();
     handler();
+
+    if (!ENABLE_WIDGET) {
+      // figma.viewport.scrollAndZoomIntoView([focusNode]);
+      const { bounds, zoom } = figma.viewport;
+      const height = Math.round(clamp(bounds.height * zoom * 0.6, 700, 1080));
+      const width = Math.round(clamp(bounds.width * zoom * 0.3, 300, 700));
+      const nodeId = figma.currentPage.selection[0]?.id;
+
+      showUI({
+        title: 'test',
+        position: {
+          x: bounds.width * zoom * 0.7,
+          y: bounds.height * zoom * 0.4
+        },
+        width,
+        height,
+        themeColors: true
+      });
+      MessageBus.once('ui:ready', () => {
+        MessageBus.send('ui:init', { nodeId, uiType: 'editor' });
+      });
+    }
   }
 }
