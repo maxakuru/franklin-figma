@@ -13,6 +13,7 @@ export type MessageType =
   | 'currentpage:change'
   | 'ui:ready'
   | 'ui:init'
+  | 'ui:change'
   | 'ui:close'
   | 'worker:ready'
   | 'worker:init'
@@ -53,6 +54,11 @@ export interface PayloadMap extends AnyPayloadMap {
   } | {
     uiType: 'editor';
     nodeId?: string;
+  } | {
+    uiType: 'menu';
+  }
+  'ui:change': {
+    viewType: 'settings' | 'config' | 'editor' | 'menu' | 'wizard';
   };
   'ui:close': undefined;
 
@@ -73,6 +79,7 @@ export type Context = PluginAPI;
 export interface RemoteAPI {
   backend: {
     test: (foo: number) => Promise<void>;
+    nodeToHTML: (nodeId: string) => Promise<string>;
   }
 }
 
@@ -120,6 +127,7 @@ class MessageBus {
     "close": [],
     "ui:ready": [],
     "ui:init": [],
+    "ui:change": [],
     "ui:close": [],
     "worker:ready": [],
     "worker:init": [],

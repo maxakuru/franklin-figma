@@ -136,7 +136,11 @@ class _RootStore {
 
   setViewType(type: ViewId) {
     console.log(`[ui/stores/root] setViewType(${type})`);
+    if (this.viewType === type) {
+      return;
+    }
     this.viewType = type;
+    MessageBus.send('ui:change', { viewType: type });
   }
 
   setViewReady(ready: boolean) {

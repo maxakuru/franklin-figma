@@ -119,7 +119,10 @@ const EditorView: FunctionalComponent = observer(() => {
     // }).catch(e => {
     //   console.log('[ui/editor] error:', e);
     // });
+    (async () => {
+      const html = await MessageBus.api.backend.nodeToHTML();
     store.setViewReady(true);
+    })();
   }, []);
 
   return(<>

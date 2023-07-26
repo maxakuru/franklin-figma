@@ -49,6 +49,26 @@ function attachFigmaListeners() {
   });
 }
 
+function initResizeEvents() {
+  let _viewType = 'menu';
+
+  MessageBus.on('ui:change', ({ viewType }) => {
+    if (viewType === _viewType) return;
+    if (viewType === 'editor') {
+      figma.ui.resize(
+        Math.ceil(figma.viewport.bounds.width * figma.viewport.zoom * 0.5),
+        Math.ceil(figma.viewport.bounds.height * figma.viewport.zoom)
+      );
+      figma.ui.reposition(
+        Math.ceil(figma.viewport.bounds.width * 0.5),
+        0
+      );
+    }
+
+    _viewType = viewType;
+  });
+}
+
 export function wrapCommon(handler: () => void) {
   return () => {
     if (ENABLE_WIDGET) {
@@ -62,10 +82,9 @@ export function wrapCommon(handler: () => void) {
       const { bounds, zoom } = figma.viewport;
       const height = Math.round(clamp(bounds.height * zoom * 0.6, 700, 1080));
       const width = Math.round(clamp(bounds.width * zoom * 0.3, 300, 700));
-      const nodeId = figma.currentPage.selection[0]?.id;
 
       showUI({
-        title: 'test',
+        title: 'Menu',
         position: {
           x: bounds.width * zoom * 0.7,
           y: bounds.height * zoom * 0.4
@@ -75,8 +94,10 @@ export function wrapCommon(handler: () => void) {
         themeColors: true
       });
       MessageBus.once('ui:ready', () => {
-        MessageBus.send('ui:init', { nodeId, uiType: 'editor' });
+        MessageBus.send('ui:init', { uiType: 'menu' });
       });
+
+      initResizeEvents();
     }
   }
 }

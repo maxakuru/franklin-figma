@@ -14,18 +14,18 @@ const App = observer(() => {
         console.log('[ui/App] render');
         MessageBus.once('ui:init', async (payload) => {
             console.log('[ui/App] init');
+            
+            store.setInitPayload(payload);
 
-            const {
-                uiType,  
-                nodeId
-            } = payload;
-
-            store.setNodeId(nodeId);
+            const { uiType } = payload;
             store.setViewType(uiType);
-            if(uiType !== 'editor') {
+
+            if(uiType !== 'menu') {
+                store.setNodeId(payload.nodeId);
+            }
+            if(uiType !== 'editor' && uiType !== 'menu') {
                 store.setNodeType(payload.nodeType);
             }
-            store.setInitPayload(payload);
         });
         MessageBus.send('ui:ready');
     }, []);
