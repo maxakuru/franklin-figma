@@ -1,19 +1,46 @@
-type SceneNodeWithType<T extends SceneNode['type']> = Extract<SceneNode, { type: T }>;
+type BaseNodeWithType<T extends BaseNode['type']> = Extract<BaseNode, { type: T }>;
 
 type MaybePromise<R> = R | Promise<R>;
 
 type ReturnDirective = 'SKIP' | 'CONTINUE';
 
-type Visitor = (node: SceneNode) => MaybePromise<string | void | [string, string] | ReturnDirective>;
-
 interface Context {
+  // the composed document
   doc: string;
-  wrappers: [string, string][];
+
+  // ordered wrappers for elements that contain children
+  wrappers: [pre: string, post: string][];
+
+  // image hash -> byte array
+  images: Record<string, Uint8Array>;
 }
 
-const visitors: {
-  [T in SceneNode['type']]: (node: SceneNodeWithType<T>) => ReturnType<Visitor>;
-} = {
+type Visitor<TNode extends BaseNode = BaseNode> = (node: TNode, ctx: Context) => MaybePromise<string | void | [string, string] | ReturnDirective>;
+
+type Visitors = {
+  [T in BaseNode['type']]: Visitor<BaseNodeWithType<T>>;
+} & {
+  // convenience visitors, not node type based
+  __IMAGE: Visitor<RectangleNode>
+}
+
+const visitors: Visitors = {
+  __IMAGE: async (node, ctx) => {
+    console.log('__IMAGE: ', node);
+    if (!Array.isArray(node.fills)) return;
+
+    const imageFill = node.fills.find(fill => fill.visible && fill.opacity > 0 && fill.type === 'IMAGE');
+    const image = figma.getImageByHash(imageFill.imageHash);
+    const bytes = await image.getBytesAsync();
+    ctx.images[image.hash] = bytes;
+    return `<img src="hash://${image.hash}">`;
+  },
+  DOCUMENT: (node) => {
+
+  },
+  PAGE: (node) => {
+
+  },
   SLICE: (node) => {
 
   },
@@ -28,14 +55,20 @@ const visitors: {
   LINE: () => { },
   ELLIPSE: () => { },
   POLYGON: () => { },
-  RECTANGLE: () => { },
-  TEXT: () => { },
+  RECTANGLE: () => {
+    return 'SKIP';
+  },
+  TEXT: (node) => {
+    return `<p>${node.characters}</p>`
+  },
   STICKY: () => { },
   CONNECTOR: () => { },
   SHAPE_WITH_TEXT: () => { },
   CODE_BLOCK: () => { },
   STAMP: () => { },
-  WIDGET: () => { },
+  WIDGET: () => {
+    return 'SKIP';
+  },
   EMBED: () => { },
   LINK_UNFURL: () => { },
   MEDIA: () => { },
@@ -45,12 +78,30 @@ const visitors: {
   TABLE: () => { },
 }
 
-const _nodeToHTML = async (node: SceneNode, ctx: Context): Promise<string> => {
+const _nodeToHTML = async (node: BaseNode, ctx: Context): Promise<string> => {
+  if ((node as SceneNode).visible === false) {
+    return 'SKIP';
+  }
+
+  let type: keyof Visitors = node.type;
+  if (node.isAsset && (node as RectangleNode).fills) {
+    const rectLike = node as RectangleNode;
+    if (
+      Array.isArray(rectLike.fills)
+      && rectLike.fills.length
+      && rectLike.fills.some(fill => fill.visible && fill.opacity > 0 && fill.type === 'IMAGE')
+    ) {
+      type = '__IMAGE';
+    }
+  }
+  console.log('node type: ', type, node);
+
   const visitor = (
-    visitors[node.type] || (() => console.warn('[backend/node2html] node type not handled: ', node.type, node))
+    visitors[type] || (() => console.warn('[backend/node2html] node type not handled: ', type, node))
   ) as Visitor;
 
-  const ret = await visitor(node);
+  const ret = await visitor(node, ctx);
+  console.log('ret: ', ret);
   if (ret === 'SKIP') {
     return;
   }
@@ -76,9 +127,21 @@ const _nodeToHTML = async (node: SceneNode, ctx: Context): Promise<string> => {
   }
 }
 
-export default async function nodeToHTML(node: SceneNode): Promise<string> {
-  return _nodeToHTML(node, {
+export default async function nodeToHTML(nodeId: string): Promise<{ html: string; images: Record<string, Uint8Array> }> {
+  const node = figma.getNodeById(nodeId);
+  if (!node) {
+    return { html: '', images: {} };
+  }
+
+  const ctx: Context = {
     doc: '',
-    wrappers: []
-  });
+    wrappers: [],
+    images: {}
+  }
+  await _nodeToHTML(node, ctx);
+
+  return {
+    html: ctx.doc,
+    images: ctx.images
+  }
 }

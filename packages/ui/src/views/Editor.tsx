@@ -1,4 +1,4 @@
-import { useEffect } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 import MessageBus from '@franklin-figma/messages';
 import { useRootStore } from "../state/provider";
 import { observer } from '@franklin-figma/mobx-preact-lite';
@@ -6,127 +6,54 @@ import { observer } from '@franklin-figma/mobx-preact-lite';
 import type { FunctionalComponent } from "preact";
 import { FranklinEditor } from "src/components/FranklinEditor";
 
-const TEST_HTML = `<div>
-  <p>Display content in a list of cards</p>
-  <div class="cards">
-    <div>
-      <div>
-        <picture>
-          <source type="image/webp" srcset="./media_1f9dc2fa1ffa3f8064411fefb0913d09b434c3345.jpeg?width=2000&#x26;format=webply&#x26;optimize=medium" media="(min-width: 600px)">
-          <source type="image/webp" srcset="./media_1f9dc2fa1ffa3f8064411fefb0913d09b434c3345.jpeg?width=750&#x26;format=webply&#x26;optimize=medium">
-          <source type="image/jpeg" srcset="./media_1f9dc2fa1ffa3f8064411fefb0913d09b434c3345.jpeg?width=2000&#x26;format=jpeg&#x26;optimize=medium" media="(min-width: 600px)">
-          <img loading="lazy" alt="A fast-moving Tunnel" src="./media_1f9dc2fa1ffa3f8064411fefb0913d09b434c3345.jpeg?width=750&#x26;format=jpeg&#x26;optimize=medium" width="1600" height="909">
-        </picture>
-      </div>
-      <div>
-        <p><strong>Unmatched speed</strong></p>
-        <p>Helix is the fastest way to publish, create, and serve websites</p>
-      </div>
-    </div>
-    <div>
-      <div>
-        <picture>
-          <source type="image/webp" srcset="./media_164228d719efbe210030ba16982dddb5af294267d.jpeg?width=2000&#x26;format=webply&#x26;optimize=medium" media="(min-width: 600px)">
-          <source type="image/webp" srcset="./media_164228d719efbe210030ba16982dddb5af294267d.jpeg?width=750&#x26;format=webply&#x26;optimize=medium">
-          <source type="image/jpeg" srcset="./media_164228d719efbe210030ba16982dddb5af294267d.jpeg?width=2000&#x26;format=jpeg&#x26;optimize=medium" media="(min-width: 600px)">
-          <img loading="lazy" alt="An iceberg" src="./media_164228d719efbe210030ba16982dddb5af294267d.jpeg?width=750&#x26;format=jpeg&#x26;optimize=medium" width="1600" height="1101">
-        </picture>
-      </div>
-      <div>
-        <p><strong>Content at scale</strong></p>
-        <p>Helix allows you to publish more content in shorter time with smaller teams</p>
-      </div>
-    </div>
-    <div>
-      <div>
-        <picture>
-          <source type="image/webp" srcset="./media_1e48ab637eaa59d36bfb74c8c3cc1eafc117b9276.jpeg?width=2000&#x26;format=webply&#x26;optimize=medium" media="(min-width: 600px)">
-          <source type="image/webp" srcset="./media_1e48ab637eaa59d36bfb74c8c3cc1eafc117b9276.jpeg?width=750&#x26;format=webply&#x26;optimize=medium">
-          <source type="image/jpeg" srcset="./media_1e48ab637eaa59d36bfb74c8c3cc1eafc117b9276.jpeg?width=2000&#x26;format=jpeg&#x26;optimize=medium" media="(min-width: 600px)">
-          <img loading="lazy" alt="Doors with light in the dark" src="./media_1e48ab637eaa59d36bfb74c8c3cc1eafc117b9276.jpeg?width=750&#x26;format=jpeg&#x26;optimize=medium" width="1600" height="889">
-        </picture>
-      </div>
-      <div>
-        <p><strong>Uncertainty eliminated</strong></p>
-        <p>Preview content at 100% fidelity, get predictable content velocity, and shorten project durations</p>
-      </div>
-    </div>
-    <div>
-      <div>
-        <picture>
-          <source type="image/webp" srcset="./media_13188f1b63b8c968cec7dfccef4fdfc6a9e6f70b5.jpeg?width=2000&#x26;format=webply&#x26;optimize=medium" media="(min-width: 600px)">
-          <source type="image/webp" srcset="./media_13188f1b63b8c968cec7dfccef4fdfc6a9e6f70b5.jpeg?width=750&#x26;format=webply&#x26;optimize=medium">
-          <source type="image/jpeg" srcset="./media_13188f1b63b8c968cec7dfccef4fdfc6a9e6f70b5.jpeg?width=2000&#x26;format=jpeg&#x26;optimize=medium" media="(min-width: 600px)">
-          <img loading="lazy" alt="A group of people around a Table" src="./media_13188f1b63b8c968cec7dfccef4fdfc6a9e6f70b5.jpeg?width=750&#x26;format=jpeg&#x26;optimize=medium" width="1600" height="1045">
-        </picture>
-      </div>
-      <div>
-        <p><strong>Widen the talent pool</strong></p>
-        <p>Authors on Helix use Microsoft Word, Excel or Google Docs and need no training</p>
-      </div>
-    </div>
-    <div>
-      <div>
-        <picture>
-          <source type="image/webp" srcset="./media_1c636300a4d38afed5441e542fd6d7241839844b0.jpeg?width=2000&#x26;format=webply&#x26;optimize=medium" media="(min-width: 600px)">
-          <source type="image/webp" srcset="./media_1c636300a4d38afed5441e542fd6d7241839844b0.jpeg?width=750&#x26;format=webply&#x26;optimize=medium">
-          <source type="image/jpeg" srcset="./media_1c636300a4d38afed5441e542fd6d7241839844b0.jpeg?width=2000&#x26;format=jpeg&#x26;optimize=medium" media="(min-width: 600px)">
-          <img loading="lazy" alt="HTML code in a code editor" src="./media_1c636300a4d38afed5441e542fd6d7241839844b0.jpeg?width=750&#x26;format=jpeg&#x26;optimize=medium" width="1600" height="1059">
-        </picture>
-      </div>
-      <div>
-        <p><strong>The low-code way to developer productivity</strong></p>
-        <p>Say goodbye to complex APIs spanning multiple languages. Anyone with a little bit of HTML, CSS, and JS can build a site on Project Helix.</p>
-      </div>
-    </div>
-    <div>
-      <div>
-        <picture>
-          <source type="image/webp" srcset="./media_1362767d232221ff20c67bc0694a8924d483687b1.jpeg?width=2000&#x26;format=webply&#x26;optimize=medium" media="(min-width: 600px)">
-          <source type="image/webp" srcset="./media_1362767d232221ff20c67bc0694a8924d483687b1.jpeg?width=750&#x26;format=webply&#x26;optimize=medium">
-          <source type="image/jpeg" srcset="./media_1362767d232221ff20c67bc0694a8924d483687b1.jpeg?width=2000&#x26;format=jpeg&#x26;optimize=medium" media="(min-width: 600px)">
-          <img loading="lazy" alt="A rocket and a headless suit" src="./media_1362767d232221ff20c67bc0694a8924d483687b1.jpeg?width=750&#x26;format=jpeg&#x26;optimize=medium" width="1600" height="1066">
-        </picture>
-      </div>
-      <div>
-        <p><strong>Headless is here</strong></p>
-        <p>Go directly from Microsoft Excel or Google Sheets to the web in mere seconds. Sanitize and collect form data at extreme scale with Project Helix Forms.</p>
-      </div>
-    </div>
-    <div>
-      <div>
-        <picture>
-          <source type="image/webp" srcset="./media_1a620138deb385f05412f4f96f9b18e454a769c76.jpeg?width=2000&#x26;format=webply&#x26;optimize=medium" media="(min-width: 600px)">
-          <source type="image/webp" srcset="./media_1a620138deb385f05412f4f96f9b18e454a769c76.jpeg?width=750&#x26;format=webply&#x26;optimize=medium">
-          <source type="image/jpeg" srcset="./media_1a620138deb385f05412f4f96f9b18e454a769c76.jpeg?width=2000&#x26;format=jpeg&#x26;optimize=medium" media="(min-width: 600px)">
-          <img loading="lazy" alt="A dial with a hand on it" src="./media_1a620138deb385f05412f4f96f9b18e454a769c76.jpeg?width=750&#x26;format=jpeg&#x26;optimize=medium" width="1600" height="1120">
-        </picture>
-      </div>
-      <div>
-        <p><strong>Peak performance</strong></p>
-        <p>Use Project Helix's serverless architecture to meet any traffic need. Use Project Helix's PageSpeed Insights Github action to evaluate every Pull-Request for Lighthouse Score.</p>
-      </div>
-    </div>
-  </div>
-</div>`;
-
 const EditorView: FunctionalComponent = observer(() => {
   const store = useRootStore();
+  const [error, setError] = useState<string>();
+  const [content, setContent] = useState<string>();
+
+  
   useEffect(() => {
-    // TODO: impl backend api for converting frame to HTML
-    // MessageBus.api.backend.test(12344).then(res => {
-    //   console.log('[ui/editor] res: ', res);
-    // }).catch(e => {
-    //   console.log('[ui/editor] error:', e);
-    // });
     (async () => {
-      const html = await MessageBus.api.backend.nodeToHTML();
-    store.setViewReady(true);
-    })();
+      await store.selectionStore.enable();
+    })().catch(e => console.error('[ui/views/Editor] failed to init view: ', e));
   }, []);
 
+  useEffect(() => {
+    store.setViewReady(false);
+    const count = store.selectionStore.nodes.length;
+
+    (async () => {
+      if(count > 1) {
+        setError('only 1 node can be selected');
+      } else if(count < 1) {
+        setError('select a node');
+      } else {
+        const [first] = store.selectionStore.nodes;
+        const { html, images } = await MessageBus.api.backend.nodeToHTML(first.id);
+        console.info('[ui/views/Editor] converted to HTML: ', html, images);
+
+        // insert data urls in place of imgs with hash sources
+        const doc = document.createElement('div');
+        doc.innerHTML = html;
+        doc.querySelectorAll('img').forEach((img) => {
+          const hash = img.src.split('hash://')[1];
+          const bytes = images[hash];
+          const blob = new Blob([bytes]);
+          const url = URL.createObjectURL(blob);
+          img.src = url;
+        });
+        
+        setContent(doc.innerHTML);
+      }
+    })()
+      .catch(e => console.error('[ui/views/Editor] failed to handle selection change: ', e))
+      .finally(() => store.setViewReady(true));
+  }, [store.selectionStore.nodes]);
+
   return(<>
-      <FranklinEditor html={TEST_HTML}/>
+      {error && <p>{error}</p>}
+      {!error && content && <FranklinEditor html={content}/>}
+      {!error && content == null && <p>Nothing to convert!</p>}
   </>)
 });
 
