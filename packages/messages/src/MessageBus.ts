@@ -80,6 +80,7 @@ export interface RemoteAPI {
   backend: {
     test: (foo: number) => Promise<void>;
     nodeToHTML: (nodeId: string) => Promise<{ html: string; images: Record<string, Uint8Array> }>;
+    toast: (message: string, error?: boolean, timeout?: number) => void;
   }
 }
 

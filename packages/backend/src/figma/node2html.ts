@@ -64,7 +64,9 @@ const visitors: Visitors = {
   STICKY: () => { },
   CONNECTOR: () => { },
   SHAPE_WITH_TEXT: () => { },
-  CODE_BLOCK: () => { },
+  CODE_BLOCK: (node) => {
+    return `<pre><code>${node.code}</pre></code>`;
+  },
   STAMP: () => { },
   WIDGET: () => {
     return 'SKIP';

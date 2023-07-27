@@ -1,6 +1,8 @@
 import { Widget, ENABLE_WIDGET } from '@franklin-figma/widgets';
 import MessageBus, { serialize } from '@franklin-figma/messages';
 
+const RESIZE_EVENTS = true;
+
 function clamp(val: number, min: number, max: number) {
   return Math.min(Math.max(val, min), max);
 }
@@ -50,6 +52,8 @@ function attachFigmaListeners() {
 }
 
 function initResizeEvents() {
+  if (!RESIZE_EVENTS) return;
+
   let _viewType = 'menu';
 
   MessageBus.on('ui:change', ({ viewType }) => {
@@ -59,10 +63,10 @@ function initResizeEvents() {
         Math.ceil(figma.viewport.bounds.width * figma.viewport.zoom * 0.5),
         Math.ceil(figma.viewport.bounds.height * figma.viewport.zoom)
       );
-      figma.ui.reposition(
-        Math.ceil(figma.viewport.bounds.width * 0.5),
-        0
-      );
+      // figma.ui.reposition(
+      //   Math.ceil(figma.viewport.bounds.width * 0.5),
+      //   0
+      // );
     }
 
     _viewType = viewType;

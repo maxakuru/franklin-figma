@@ -26,8 +26,8 @@ export const FranklinEditor: FunctionalComponent<FranklinEditorProps> = ({
   const [config, setConfig] = useState({
     width: '100%',
     height: 'auto',
-    readonly: true,
-    toolbar: false,
+    // readonly: true,
+    toolbar: true,
     zIndex: -1,
     preset: "inline",
     theme: store.theme === 'dark' ? 'dark' : 'default'

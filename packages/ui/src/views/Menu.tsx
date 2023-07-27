@@ -1,5 +1,5 @@
 import { useEffect } from "preact/hooks";
-import { Button, ButtonGroup, Text, Flex } from '@adobe/react-spectrum';
+import { Button, ButtonGroup, Text, Flex, Divider } from '@adobe/react-spectrum';
 import { useRootStore } from "../state/provider";
 import MessageBus from '@franklin-figma/messages';
 import { observer } from '@franklin-figma/mobx-preact-lite';
@@ -9,7 +9,9 @@ import type { FunctionalComponent } from "preact";
 import Preview from '@spectrum-icons/workflow/Preview';
 import Copy from '@spectrum-icons/workflow/Copy';
 import Edit from '@spectrum-icons/workflow/Edit';
+import Gears from '@spectrum-icons/workflow/GearsEdit';
 
+import nodeToHTML from "src/util/node2html";
 import {WizardId} from "../views/Wizard";
 import ViewId from "./ids";
 
@@ -23,8 +25,36 @@ const EditorView: FunctionalComponent = observer(() => {
     })().catch(e => console.error('[ui/views/Menu] failed to init: ', e));
   }, []);
 
-  const copy = () => {
+  const copy = async () => {
     console.log('[ui/views/Menu] todo copy');
+    if(store.selectionStore.nodes.length !== 1) {
+      MessageBus.api.backend.toast('exactly one node must be selected');
+      return;
+    }
+    const [first] = store.selectionStore.nodes;
+    const html = await nodeToHTML(first);
+    try {
+    await navigator.clipboard.writeText(html);
+    } catch {
+      // @ts-ignore
+      if (window.copy) {
+        // @ts-ignore
+        window.copy(value);
+      } else {
+        const area = document.createElement('textarea');
+        document.body.appendChild(area);
+        area.value = html;
+        area.focus();
+        area.select();
+        const result = document.execCommand('copy');
+        document.body.removeChild(area);
+        if (!result) {
+          throw new Error();
+        }
+      }
+    }
+    // console.log('clipboard: ', await navigator.clipboard.read());
+    // navigator.clipboard.write()
   }
 
   const editor = () => {
@@ -36,24 +66,28 @@ const EditorView: FunctionalComponent = observer(() => {
   }
 
   return(
-    <Flex margin={10} direction="column">
-      <ButtonGroup margin={10}>
-        <Button onPress={copy} variant="cta" isDisabled={!selection.nodes.length}>
+    <Flex marginY={10} direction="column">
+      <ButtonGroup marginY={10}>
+        <Button onPress={copy} variant="cta" isDisabled={selection.nodes.length !== 1}>
           <Copy />
           <Text>Copy</Text>
         </Button>
-        <Button onPress={editor} variant="primary" isDisabled={!selection.nodes.length}>
+        <Button onPress={editor} variant="primary" isDisabled={selection.nodes.length !== 1}>
           <Preview />
           <Text>Editor</Text>
         </Button>
       </ButtonGroup>
 
-      <Button onPress={setupLibrary} variant="secondary" isDisabled={!!selection.nodes.length}>
-        <Edit />
-        <Text>Setup Library</Text>
-      </Button>
+      <Text>{selection.nodes.length < 1 && 'Select a node...'}</Text>
 
-      <Text>{!selection.nodes.length && <p>Select a node...</p>}</Text>
+      <Divider size="S" marginY={20} />
+
+      <Flex marginY={10} direction="column">
+        <Button onPress={setupLibrary} variant="secondary">
+          <Gears />
+          <Text>Setup Library</Text>
+        </Button>
+      </Flex>
     </Flex>
   );
 });

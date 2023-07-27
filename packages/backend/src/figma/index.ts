@@ -7,6 +7,9 @@ export default function handler() {
       console.log('[backend/figma] called test api: ', args);
       return 'foo';
     },
-    nodeToHTML
+    nodeToHTML,
+    toast: (message: string, error = false, timeout = 3000) => {
+      figma.notify(message, { error, timeout });
+    }
   }
 }

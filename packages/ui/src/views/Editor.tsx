@@ -5,6 +5,7 @@ import { observer } from '@franklin-figma/mobx-preact-lite';
 
 import type { FunctionalComponent } from "preact";
 import { FranklinEditor } from "src/components/FranklinEditor";
+import nodeToHTML from "src/util/node2html";
 
 const EditorView: FunctionalComponent = observer(() => {
   const store = useRootStore();
@@ -29,21 +30,8 @@ const EditorView: FunctionalComponent = observer(() => {
         setError('select a node');
       } else {
         const [first] = store.selectionStore.nodes;
-        const { html, images } = await MessageBus.api.backend.nodeToHTML(first.id);
-        console.info('[ui/views/Editor] converted to HTML: ', html, images);
-
-        // insert data urls in place of imgs with hash sources
-        const doc = document.createElement('div');
-        doc.innerHTML = html;
-        doc.querySelectorAll('img').forEach((img) => {
-          const hash = img.src.split('hash://')[1];
-          const bytes = images[hash];
-          const blob = new Blob([bytes]);
-          const url = URL.createObjectURL(blob);
-          img.src = url;
-        });
-        
-        setContent(doc.innerHTML);
+        const html = await nodeToHTML(first);
+        setContent(html);
       }
     })()
       .catch(e => console.error('[ui/views/Editor] failed to handle selection change: ', e))
