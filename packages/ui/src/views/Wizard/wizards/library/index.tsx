@@ -23,7 +23,17 @@ const fetchLibraryBlocks = async (str: string) => {
 
   const { data } = await resp.json();
   const blocks: Record<string, string>[] = data.map((row: AnyOk) => {
-    return Object.fromEntries(Object.entries(row).map(([key, val]) => ([key.toLowerCase(), val])));
+    return Object.fromEntries(Object.entries(row).map(([key, val]) => {
+      const lower = key.toLowerCase();
+      if(lower === 'path') {
+        const url = new URL(val as string);
+        if (!url.pathname.endsWith('.plain.html')) {
+          url.pathname = url.pathname + '.plain.html';
+          val = url.toString();
+        }
+      }
+      return [lower, val];
+    }));
   }, {});
   return blocks;
 }

@@ -17,8 +17,8 @@ export class SettingsStore extends BaseStore {
 
   // library data
   libraryURL: string | undefined = undefined;
-  libraryDefinition: AnyOk = [];
-  libraryBlocks: AnyOk = {};
+  libraryDefinition: Record<string, string>[] = [];
+  libraryBlocks: Record<string, string> = {};
 
   constructor(root: RootStore) {
     super(root);
@@ -40,15 +40,34 @@ export class SettingsStore extends BaseStore {
     });
   }
 
-  async setLibraryData(url: string, definition: AnyOk) {
+  async setLibraryData(url: string, definition: Record<string, string>[]) {
     this.libraryURL = url;
     this.libraryDefinition = definition;
 
-    await setOrRemove('library_data', { url, definition });
+    await Promise.all([
+      setOrRemove('library_data', { url, definition }),
+      setOrRemove('library_blocks', undefined)
+    ]);
   }
 
-  async getLibraryBlock(name: string): Promise<string> {
+  async getLibraryBlock(name: string): Promise<string | undefined> {
+    if (typeof this.libraryBlocks[name] === 'string') {
+      return this.libraryBlocks[name];
+    }
 
+    const row = this.libraryDefinition.find(row => row.name === name);
+    if (!row || !row.path) return;
+
+    let block: string;
+    const resp = await fetch(row.path);
+    if (!resp.ok) {
+      block = '';
+    } else {
+      block = await resp.text();
+    }
+
+    this.libraryBlocks[name] = block;
+    return block;
   }
 
   setPanelId(id: string) {

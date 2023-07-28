@@ -15,6 +15,10 @@ export function setOrRemove(key: string, value: AnyOk): Promise<void> {
   console.log(`[support/figma] setOrRemove(${key} => ${value})`);
 
   return MessageBus.execute((figma) => {
-    return figma.clientStorage.setAsync(key, value);
+    if (typeof value === 'undefined') {
+      return figma.clientStorage.deleteAsync(key);
+    } else {
+      return figma.clientStorage.setAsync(key, value);
+    }
   }, { key, value });
 }

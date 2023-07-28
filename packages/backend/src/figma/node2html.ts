@@ -52,8 +52,16 @@ const visitors: Visitors = {
   FRAME: (node) => { },
   GROUP: () => { },
   COMPONENT_SET: () => { },
-  COMPONENT: () => { },
-  INSTANCE: () => { },
+  async COMPONENT(node, ctx) {
+    const block = await ctx.getLibraryBlock(node.name);
+    console.log('COMPONENT block: ', block);
+    return '';
+  },
+  async INSTANCE(node, ctx) {
+    const block = await ctx.getLibraryBlock(node.name);
+    console.log('INSTANCE block: ', block, node.name);
+    return '';
+  },
   BOOLEAN_OPERATION: () => { },
   VECTOR: () => { },
   STAR: () => { },
