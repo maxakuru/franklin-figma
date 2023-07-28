@@ -17,7 +17,8 @@ export class SettingsStore extends BaseStore {
 
   // library data
   libraryURL: string | undefined = undefined;
-  libraryBlocks: AnyOk = undefined;
+  libraryDefinition: AnyOk = [];
+  libraryBlocks: AnyOk = {};
 
   constructor(root: RootStore) {
     super(root);
@@ -26,19 +27,28 @@ export class SettingsStore extends BaseStore {
       enabled: observable,
       panelId: observable,
       libraryURL: observable,
+      libraryDefinition: observable,
+      libraryBlocks: observable,
+
       nodePanelEnabled: computed,
       enabledPanels: computed,
+
       enable: action,
       setPanelId: action,
-      setLibraryData: action
+      setLibraryData: action,
+      getLibraryBlock: action
     });
   }
 
-  async setLibraryData(url: string, blocks: AnyOk) {
+  async setLibraryData(url: string, definition: AnyOk) {
     this.libraryURL = url;
-    this.libraryBlocks = blocks;
+    this.libraryDefinition = definition;
 
-    await setOrRemove('library_data', { url, blocks });
+    await setOrRemove('library_data', { url, definition });
+  }
+
+  async getLibraryBlock(name: string): Promise<string> {
+
   }
 
   setPanelId(id: string) {
@@ -92,8 +102,8 @@ export class SettingsStore extends BaseStore {
     const data = await retrieve<AnyOk>('library_data');
 
     if (data) {
-      const { url, blocks } = data;
-      this.libraryBlocks = blocks;
+      const { url, definition } = data;
+      this.libraryDefinition = definition;
       this.libraryURL = url;
     }
   }

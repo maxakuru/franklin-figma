@@ -5,6 +5,9 @@ type MaybePromise<R> = R | Promise<R>;
 type ReturnDirective = 'SKIP' | 'CONTINUE';
 
 interface Context {
+  _libraryBlocks: Record<string, string>;
+  _libraryDefinition: Record<string, string>[];
+
   // the composed document
   doc: string;
 
@@ -13,6 +16,8 @@ interface Context {
 
   // image hash -> byte array
   images: Record<string, Uint8Array>;
+
+  getLibraryBlock(name: string): Promise<string | undefined>;
 }
 
 type Visitor<TNode extends BaseNode = BaseNode> = (node: TNode, ctx: Context) => MaybePromise<string | void | [string, string] | ReturnDirective>;
@@ -135,10 +140,32 @@ export default async function nodeToHTML(nodeId: string): Promise<{ html: string
     return { html: '', images: {} };
   }
 
+  const _libraryDefinition = (await figma.clientStorage.getAsync('library_data'))?.definition || [];
+
   const ctx: Context = {
+    _libraryBlocks: {},
+    _libraryDefinition,
     doc: '',
     wrappers: [],
-    images: {}
+    images: {},
+    async getLibraryBlock(this: Context, name: string) {
+      if (typeof this._libraryBlocks[name] === 'string') {
+        return this._libraryBlocks[name];
+      }
+
+      const row = this._libraryDefinition.find(row => row.name === name);
+      if (!row || !row.path) return;
+
+      const resp = await fetch(row.path);
+      if (!resp.ok) {
+        this._libraryBlocks[name] = '';
+      } else {
+        this._libraryBlocks[name] = await resp.text();
+      }
+      await figma.clientStorage.setAsync('library_blocks', this._libraryBlocks);
+
+      return this._libraryBlocks[name];
+    }
   }
   await _nodeToHTML(node, ctx);
 

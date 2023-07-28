@@ -35,17 +35,16 @@ export const setupLibrary = () => {
   const [isValid, setIsValid] = useState(LIBRARY_URL_REGEX.test(newLibraryURL));
   const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState(0);
-  const [blocks, setBlocks] = useState<Record<string, string>[]>();
+  const [definition, setDefinition] = useState<Record<string, string>[]>();
   const [error, setError] = useState<string>();
 
   const setValue = (newVal: string) => {
-    console.log('setValue: ', newVal);
     setNewLibraryURL(newVal);
     setIsValid(LIBRARY_URL_REGEX.test(newVal))
   }
 
   const save = async () => {
-    await store.settingsStore.setLibraryData(newLibraryURL, blocks)
+    await store.settingsStore.setLibraryData(newLibraryURL, definition)
     store.closeWizard();
   }
 
@@ -64,7 +63,6 @@ export const setupLibrary = () => {
   }
 
   useEffect(() => {
-    console.log('useEffect() step -> ', step);
     switch(step) {
       case 0:
         // reset messages
@@ -75,9 +73,9 @@ export const setupLibrary = () => {
         (async() => {
           setIsLoading(true);
           setError(undefined);
-          setBlocks(undefined);
+          setDefinition(undefined);
           const data = await fetchLibraryBlocks(newLibraryURL);
-          setBlocks(data);
+          setDefinition(data);
           setIsLoading(false);
         })().catch(e => {
           console.error('[ui/wizards/library] failed to load library: ', e);
@@ -107,9 +105,9 @@ export const setupLibrary = () => {
             <p>{error}</p>
           </span>
           : <>{
-            blocks && <span>
-              <p><strong>Found {blocks.length} block{blocks.length > 1 ? 's' : ''}:</strong></p>
-              <p>{blocks.map(({name, ...block}) => `${name} -> ${block.path}`).join('\n')}</p>
+            definition && <span>
+              <p><strong>Found {definition.length} block{definition.length > 1 ? 's' : ''}:</strong></p>
+              <p>{definition.map(({name, ...definition}) => `${name} -> ${definition.path}`).join('\n')}</p>
             </span>}
           </>
         }

@@ -35,21 +35,28 @@ class _RootStore {
   settingsStore: SettingsStore = undefined;
 
   viewType: ViewId = INIT_VIEW;
-  _prevViewType: ViewId = undefined;
   nodeType?: 'FORM' | 'PAGE' = undefined;
   nodeId?: string = undefined;
   viewReady: boolean = false;
   wizardId: WizardId | undefined = INIT_WIZARD;
-
-  initPayload: PayloadMap['ui:init'] = undefined;
-
   theme: 'light' | 'dark' = undefined;
-
+  initPayload: PayloadMap['ui:init'] = undefined;
   overlayStack: VNode[] = [];
+
+  // TODO:? move these into a different store
+  // image hash -> { bytes, base64 }
   images: Record<string, {
     bytes: Uint8Array,
     base64: string
   }> = {};
+  // component id -> 
+  // componentBlockMap: Record<string, unknown> = {};
+
+  /**
+   * View to revert to after wizard closes
+   */
+  private _prevViewType: ViewId = undefined;
+
 
   /**
    * Promise that resolves when initialization is complete
