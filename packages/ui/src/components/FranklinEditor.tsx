@@ -1,5 +1,6 @@
 import { convertBlocksToTables } from "../util/dom";
 import { useRootStore } from "../state/provider";
+import { dataURLToBase64 } from "../util/node2html";
 
 import type { FunctionalComponent } from 'preact';
 import { useState, useRef, useEffect } from 'preact/compat';
@@ -38,6 +39,27 @@ export const FranklinEditor: FunctionalComponent<FranklinEditorProps> = ({
     const inst = Jodit.make('#editor', config);
     setEditor(inst);
   }
+
+  useEffect(() => {
+    const copyHandler = (e: ClipboardEvent) => {
+      const div = document.createElement('div');
+      div.innerHTML = editor.s.html;
+      div.querySelectorAll('img').forEach((img) => {
+        const { hash } = img.dataset;
+        img.src = store.images[hash].base64;
+      });
+
+      e.clipboardData.setData('text/html', div.innerHTML);
+      e.clipboardData.setData('text/plain', div.innerHTML);
+
+      e.preventDefault();
+    }
+
+    window.addEventListener('copy', copyHandler);
+    return () => {
+      window.removeEventListener('copy', copyHandler);
+    }
+  }, [editor]);
 
   useEffect(() => {
     if(!containerRef.current || !editorRef.current){

@@ -46,6 +46,10 @@ class _RootStore {
   theme: 'light' | 'dark' = undefined;
 
   overlayStack: VNode[] = [];
+  images: Record<string, {
+    bytes: Uint8Array,
+    base64: string
+  }> = {};
 
   /**
    * Promise that resolves when initialization is complete
@@ -59,9 +63,9 @@ class _RootStore {
     this.selectionStore = new SelectionStore(this);
     this.settingsStore = new SettingsStore(this);
 
-
     makeObservable(this, {
       ready: observable,
+      images: observable,
       viewType: observable,
       nodeType: observable,
       nodeId: observable,
@@ -81,7 +85,8 @@ class _RootStore {
       setTheme: action,
       pushOverlay: action,
       openWizard: action,
-      closeWizard: action
+      closeWizard: action,
+      setImageMap: action
     });
 
     this._initPromise = this._init();
@@ -108,6 +113,10 @@ class _RootStore {
         figma.closePlugin();
       });
     }
+  }
+
+  setImageMap(images: Record<string, { bytes: Uint8Array; base64: string; }>) {
+    this.images = images;
   }
 
   pushOverlay(overlay: VNode) {

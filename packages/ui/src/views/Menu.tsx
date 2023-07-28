@@ -38,15 +38,21 @@ const EditorView: FunctionalComponent = observer(() => {
     } catch {
       // @ts-ignore
       if (window.copy) {
+        console.warn('using window.copy!');
         // @ts-ignore
         window.copy(value);
       } else {
-        const area = document.createElement('textarea');
+        console.warn('using execCommand copy!');
+        // const area = document.createElement('textarea');
+        const area = document.createElement('div');
+        area.innerHTML = 'hiiiii';
+        area.contentEditable = 'true';
         document.body.appendChild(area);
-        area.value = html;
+        // area.value = html;
         area.focus();
-        area.select();
+        // area.select();
         const result = document.execCommand('copy');
+        console.log('result: ', result);
         document.body.removeChild(area);
         if (!result) {
           throw new Error();

@@ -11,7 +11,6 @@ const EditorView: FunctionalComponent = observer(() => {
   const store = useRootStore();
   const [error, setError] = useState<string>();
   const [content, setContent] = useState<string>();
-
   
   useEffect(() => {
     (async () => {

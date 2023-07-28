@@ -30,7 +30,7 @@ export function RootStoreProvider({ children }: { children: VNode }): JSX.Elemen
 
 export function useRootStore(): RootStore {
   const context = useContext(StoreContext);
-  if (typeof context === 'undefined') {
+  if (context == null) {
     throw new Error('useRootStore() must be used within RootStoreProvider');
   }
   return context;
