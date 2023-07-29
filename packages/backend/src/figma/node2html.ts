@@ -45,6 +45,11 @@ type DOMNode = {
   children?: DOMNode[];
 }
 
+type ParsedDOM = {
+  root: DOMNode;
+  find: (predicate: (node: DOMNode) => boolean) => DOMNode | void;
+}
+
 const isImageNode = (node: BaseNode): boolean => {
   if (!node.isAsset || !(node as RectangleNode).fills) {
     return false;
@@ -71,8 +76,8 @@ const findAllAncestors = (root: BaseNode, predicate: (node: BaseNode) => boolean
   ]
 }
 
-const parseDOM = async (html: string, selector: string = ''): Promise<DOMNode | undefined> => {
-  return MessageBus.execute(() => {
+const parseDOM = async (html: string, selector: string = ''): Promise<undefined | ParsedDOM> => {
+  const root = await MessageBus.execute(() => {
     // @ts-ignore
     const div = document.createElement('div');
     div.innerHTML = html;
@@ -120,6 +125,21 @@ const parseDOM = async (html: string, selector: string = ''): Promise<DOMNode | 
 
     return parseNode(rootEl, rootEl);
   }, { html, selector });
+
+  return {
+    root,
+    find(this: ParsedDOM, predicate: (node: DOMNode) => boolean) {
+      const _find = (node: DOMNode): DOMNode => {
+        if (predicate(node)) return node;
+        return node.children.reduce((prev, cur) => {
+          if (prev) return prev;
+          return _find(cur);
+        }, null);
+      }
+
+      return _find(this.root);
+    }
+  }
 }
 
 const visitors: Visitors = {
@@ -171,16 +191,28 @@ const visitors: Visitors = {
     const dom = await parseDOM(html, `div.${node.name}`);
     console.log('dom: ', dom);
 
-    // for each insertable node,
-    for (const insertable of insertableNodes) {
-      // find corresponding node in main component: snip instance id from `{instance.id};${main.id}`
-
-      // content of main component's node is what connects to block
-    }
     const main = node.mainComponent;
     console.log('node, main: ', node, main);
-    console.log('instance component children ids: ', node.children.map(c => c.id));
-    console.log('main component children ids: ', node.mainComponent.children.map(c => c.id));
+
+    // for each insertable node,
+    for (const insertable of insertableNodes) {
+      // find corresponding node in main component: snip instance id from `I{instance.id};${main.id}`
+      const mainNodeId = insertable.id.replace(new RegExp(`^I${node.id};`), 'I');
+      const mainNode = figma.getNodeById(mainNodeId);
+      console.log('mainNode: ', mainNode);
+
+      // content of main component's node is what connects to block
+      let match;
+      if (isImageNode(mainNode)) {
+        match = dom.find((cand) => cand.attrs.alt === mainNode.name);
+      } else if (mainNode.type === 'TEXT') {
+        match = dom.find((cand) => cand.innerText === mainNode.characters);
+      } else if (mainNode.type === 'CODE_BLOCK') {
+        match = dom.find((cand) => cand.innerText === mainNode.code);
+      }
+      console.log('match: ', match);
+    }
+
     return 'SKIP';
   },
   BOOLEAN_OPERATION: () => { },
