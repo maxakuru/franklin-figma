@@ -30,6 +30,7 @@ const EditorView: FunctionalComponent = observer(() => {
       } else {
         const [first] = store.selectionStore.nodes;
         const html = await nodeToHTML(first);
+        setError(undefined);
         setContent(html);
       }
     })()

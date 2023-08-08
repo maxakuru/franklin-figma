@@ -47,7 +47,8 @@ type DOMNode = {
 
 type ParsedDOM = {
   root: DOMNode;
-  find: (predicate: (node: DOMNode) => boolean) => DOMNode | void;
+  find: (predicate: (node: DOMNode) => boolean) => DOMNode | undefined;
+  html: () => string;
 }
 
 const isImageNode = (node: BaseNode): boolean => {
@@ -138,6 +139,36 @@ const parseDOM = async (html: string, selector: string = ''): Promise<undefined 
       }
 
       return _find(this.root);
+    },
+    html(this: ParsedDOM) {
+      let out = '';
+      let indent = 0;
+
+      const _process = (node: DOMNode): string => {
+        const tag = node.tag.toLowerCase();
+
+        out += `${out.match(/\s$/) ? '' : '\n'}${' '.repeat(indent)}<${tag}\
+${node.classes.size ? ` class="${[...node.classes].join(' ')}"` : ''}\
+${!Object.keys(node.attrs).length ? '' : ` ${Object.entries(node.attrs).map(([k, v]) => `${k}="${v}"`).join(' ')}`}>`;
+
+        indent += 1;
+        out += `\n${' '.repeat(indent)}`;
+
+        if (node.innerText && (!node.children || !node.children.length)) {
+          // paragraph leaf with text
+          out += node.innerText;
+        }
+        (node.children || []).forEach(_process);
+
+        indent -= 1;
+        // TODO: handle self closing tags
+        if (!['img', 'source'].includes(tag)) {
+          out += `\n${' '.repeat(indent)}</${tag}>`;
+        }
+        return out;
+      };
+
+      return _process(this.root);
     }
   }
 }
@@ -182,14 +213,17 @@ const visitors: Visitors = {
 
     // find each insertable node in instance
     const insertableNodes = findAllAncestors(node, (candidate) => {
-      if (isImageNode(node)) {
+      if ((candidate as TextNode).visible === false) {
+        return false;
+      }
+      if (isImageNode(candidate)) {
         return true;
       }
       return ['TEXT', 'CODE_BLOCK'].includes(candidate.type);
     });
 
     const dom = await parseDOM(html, `div.${node.name}`);
-    console.log('dom: ', dom);
+    console.log('dom, insertableNodes: ', dom, insertableNodes);
 
     const main = node.mainComponent;
     console.log('node, main: ', node, main);
@@ -199,20 +233,46 @@ const visitors: Visitors = {
       // find corresponding node in main component: snip instance id from `I{instance.id};${main.id}`
       const mainNodeId = insertable.id.replace(new RegExp(`^I${node.id};`), 'I');
       const mainNode = figma.getNodeById(mainNodeId);
-      console.log('mainNode: ', mainNode);
 
       // content of main component's node is what connects to block
-      let match;
+      let match: DOMNode | undefined;
       if (isImageNode(mainNode)) {
         match = dom.find((cand) => cand.attrs.alt === mainNode.name);
-      } else if (mainNode.type === 'TEXT') {
-        match = dom.find((cand) => cand.innerText === mainNode.characters);
-      } else if (mainNode.type === 'CODE_BLOCK') {
-        match = dom.find((cand) => cand.innerText === mainNode.code);
+
+        if (match) {
+          const imageFill = (insertable as any).fills.find((fill: Paint) => fill.visible && fill.opacity > 0 && fill.type === 'IMAGE');
+          const image = figma.getImageByHash(imageFill.imageHash);
+          const bytes = await image.getBytesAsync();
+          ctx.images[imageFill.imageHash] = bytes;
+          match.attrs.src = `hash://${image.hash}`;
+        } else {
+          console.warn('[backend/node2html] no main component match found for image: ', mainNode.name, mainNode, insertable)
+        }
+      } else {
+        switch (mainNode.type) {
+          case 'TEXT':
+            match = dom.find((cand) => (!cand.children || !cand.children.length) && cand.innerText === mainNode.characters);
+            if (match) {
+              match.innerText = (insertable as TextNode).characters;
+            } else {
+              console.warn('no main component match found for text: ', mainNode.characters, mainNode, insertable)
+            }
+            break;
+          case 'CODE_BLOCK':
+            match = dom.find((cand) => cand.innerText === mainNode.code);
+            if (match) {
+              match.innerText = (insertable as CodeBlockNode).code;
+            } else {
+              console.warn('no main component match found for code block: ', mainNode.code, mainNode, insertable)
+            }
+            break;
+          default:
+            console.warn('unhandled insertable main node type: ', mainNode.type, mainNode, insertable);
+        }
       }
-      console.log('match: ', match);
     }
 
+    ctx.doc += dom.html();
     return 'SKIP';
   },
   BOOLEAN_OPERATION: () => { },
@@ -268,7 +328,9 @@ const _nodeToHTML = async (node: BaseNode, ctx: Context): Promise<string> => {
   }
 
   if (typeof ret === 'string') {
-    ctx.doc += ret;
+    if (ret !== 'CONTINUE') {
+      ctx.doc += ret;
+    }
   } else if (Array.isArray(ret)) {
     ctx.doc += ret[0];
     ctx.wrappers.push(ret);

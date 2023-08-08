@@ -24,7 +24,7 @@ export const dataURLToBase64 = async (url: string): Promise<string> => {
 export default async function nodeToHTML(node: SceneNode): Promise<string> {
   const { html, images } = await MessageBus.api.backend.nodeToHTML(node.id);
   const imageMap = Object.fromEntries(Object.entries(images).map(([k, bytes]) => [k, { bytes, base64: '' }]));
-  console.info('[ui/views/Editor] converted to HTML: ', html, imageMap);
+  console.info('[ui/util/node2html] converted to HTML: ', html, imageMap);
 
   // insert data urls in place of imgs with hash sources
   const doc = document.createElement('div');

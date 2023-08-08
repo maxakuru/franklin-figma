@@ -90,7 +90,7 @@ export const FranklinEditor: FunctionalComponent<FranklinEditorProps> = ({
     elem.innerHTML = html;
     convertBlocksToTables(elem);
     setContent(elem.innerHTML);
-  }, [editor]);
+  }, [editor, html]);
 
   useEffect(() => {
     if(!editor) {
