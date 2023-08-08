@@ -101,7 +101,7 @@ function decorateTable(table: HTMLTableElement) {
  * @param blockClasses Block classes
  * @returns Table
  */
-export function createTable(data: any, blockClasses: string = '') {
+export function createTable(data: any, blockClasses: string[] = []) {
   const table = document.createElement('table');
   decorateTable(table);
   const maxColumns = data.reduce((data: [], max: number) => data.length > max ? data.length : max, 0).length;
@@ -117,7 +117,7 @@ export function createTable(data: any, blockClasses: string = '') {
         tr.style.height = "22.5pt";
         const classes = cell.split(' ');
         const blockName = classes.shift();
-        cell = `${blockName}${(blockClasses) ? ` (${blockClasses})` : ''}`;
+        cell = `${blockName}${blockClasses.length ? ` (${blockClasses.join(', ')})` : ''}`;
         // Check if row has less columns than maxColumns, if so than expand last cell
       } else if (cellIndex === row.length - 1 && cellIndex < maxColumns) {
         td.colSpan = maxColumns - cellIndex;
@@ -197,16 +197,19 @@ export function createSectionMetadata(element: HTMLElement, story: any) {
  * @param element The main element that contains the divs that need to be converted to tables
  * @param blockClasses Block classes to add to the block name (first row)
  */
-export function convertBlocksToTables(element: HTMLElement, blockClasses?: string) {
+export function convertBlocksToTables(element: HTMLElement, blockClasses: string[] = []) {
   element.style.width = `${TABLE_WRAPPER_WIDTH}px`;
   element.style.margin = TABLE_WRAPPER_MARGIN;
   element.querySelectorAll('div[class]').forEach((block) => {
-    const name = computeBlockName(block.className);
+    const classes = [...(block.classList as any)];
+    const name = computeBlockName(classes[0]);
+    const variants = new Set<string>([...blockClasses, ...classes.slice(1)]);
+
     const data = [[name]];
     const divs = block.querySelectorAll(':scope > div');
     if (divs) {
       divs.forEach((div) => {
-        blockClasses && div.classList.add(blockClasses);
+        div.classList.add(...blockClasses);
         const subDivs = div.querySelectorAll(':scope > div');
         if (subDivs && subDivs.length > 0) {
           const rowData: any[] = [];
@@ -225,7 +228,7 @@ export function convertBlocksToTables(element: HTMLElement, blockClasses?: strin
         }
       });
     }
-    const table = createTable(data, blockClasses);
+    const table = createTable(data, [...variants]);
     block.innerHTML = '';
     block.appendChild(table);
   });

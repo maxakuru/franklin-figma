@@ -20,7 +20,7 @@ interface Context {
   // image hash -> byte array
   images: Record<string, Uint8Array>;
 
-  getLibraryBlock(name: string): Promise<string | undefined>;
+  getLibraryBlock(name: string): Promise<[html: string, block: string, variants: string[]] | undefined>;
 }
 
 type Visitor<TNode extends BaseNode = BaseNode> = (
@@ -205,8 +205,8 @@ const visitors: Visitors = {
     return 'SKIP';
   },
   async INSTANCE(node, ctx) {
-    const html = await ctx.getLibraryBlock(node.name);
-    console.log('INSTANCE block: ', node.name, html);
+    const [html, block] = await ctx.getLibraryBlock(node.name);
+    console.log('INSTANCE block: ', node.name, block, html);
     if (!html) {
       return 'CONTINUE';
     }
@@ -222,7 +222,7 @@ const visitors: Visitors = {
       return ['TEXT', 'CODE_BLOCK'].includes(candidate.type);
     });
 
-    const dom = await parseDOM(html, `div.${node.name}`);
+    const dom = await parseDOM(html, `div.${block}`);
     console.log('dom, insertableNodes: ', dom, insertableNodes);
 
     const main = node.mainComponent;
@@ -351,6 +351,20 @@ const _nodeToHTML = async (node: BaseNode, ctx: Context): Promise<string> => {
   }
 }
 
+function toClassName(name: string): string {
+  return typeof name === 'string'
+    ? name.toLowerCase().replace(/[^0-9a-z]/gi, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')
+    : '';
+}
+
+function normalizeBlockName(name: string): [normalized: string, variants: string[]] {
+  let [normalized, ...variants] = name.split('(');
+  variants = (variants[0] || '').replace(/\)$/, '').split(' ').map(toClassName);
+  normalized = toClassName(normalized);
+
+  return [normalized, variants];
+}
+
 export default async function nodeToHTML(nodeId: string): Promise<{ html: string; images: Record<string, Uint8Array> }> {
   const node = figma.getNodeById(nodeId);
   if (!node) {
@@ -367,22 +381,51 @@ export default async function nodeToHTML(nodeId: string): Promise<{ html: string
     wrappers: [],
     images: {},
     async getLibraryBlock(this: Context, name: string) {
+      const [normalized, variants] = normalizeBlockName(name);
+      console.log('normalized, variants: ', normalized, variants);
+
       if (typeof this._libraryBlocks[name] === 'string') {
-        return this._libraryBlocks[name];
+        // exact match, includes variants already
+        return [this._libraryBlocks[name], normalized, variants];
       }
 
-      const row = this._libraryDefinition.find(row => row.name === name);
-      if (!row || !row.path) return;
+      let html: string;
 
-      const resp = await fetch(row.path);
-      if (!resp.ok) {
-        this._libraryBlocks[name] = '';
+      if (typeof this._libraryBlocks[normalized] === 'string') {
+        // normalized match, does not include variants
+        html = this._libraryBlocks[normalized];
       } else {
-        this._libraryBlocks[name] = await resp.text();
-      }
-      await figma.clientStorage.setAsync('library_blocks', this._libraryBlocks);
+        const row = this._libraryDefinition.find(row => normalized === normalizeBlockName(row.name)[0]);
+        if (!row || !row.path) return;
 
-      return this._libraryBlocks[name];
+        const resp = await fetch(row.path);
+        if (!resp.ok) {
+          html = '';
+        } else {
+          html = await resp.text();
+        }
+        this._libraryBlocks[normalized] = html;
+      }
+
+      // add variants, store as exact match
+      if (html && variants.length) {
+        this._libraryBlocks[name] = await MessageBus.execute(() => {
+          // @ts-ignore
+          const div = document.createElement('div');
+          div.innerHTML = html;
+          const block = div.querySelector(`div.${normalized}`);
+          block.classList.add(...variants);
+          return div.innerHTML;
+        }, { variants, html, normalized });
+      } else if (!variants.length) {
+        this._libraryBlocks[name] = this._libraryBlocks[normalized];
+      } else {
+        this._libraryBlocks[name] = html;
+      }
+
+      // save cache
+      await figma.clientStorage.setAsync('library_blocks', this._libraryBlocks);
+      return [this._libraryBlocks[name], normalized, variants];
     }
   }
   await _nodeToHTML(node, ctx);

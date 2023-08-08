@@ -25,8 +25,8 @@ import { SettingsStore } from './settings.store';
 import MessageBus, { PayloadMap } from '@franklin-figma/messages';
 import { VNode } from 'preact';
 
-const INIT_VIEW: ViewId = ViewId.Wizard;
-const INIT_WIZARD: WizardId = WizardId.setupLibrary;
+const INIT_VIEW: ViewId | false = false && ViewId.Wizard;
+const INIT_WIZARD: WizardId | false = false && WizardId.setupLibrary;
 
 class _RootStore {
   ready = false;
@@ -34,11 +34,11 @@ class _RootStore {
   selectionStore: SelectionStore = undefined;
   settingsStore: SettingsStore = undefined;
 
-  viewType: ViewId = INIT_VIEW;
+  viewType: ViewId = INIT_VIEW ? INIT_VIEW : undefined;
   nodeType?: 'FORM' | 'PAGE' = undefined;
   nodeId?: string = undefined;
   viewReady: boolean = false;
-  wizardId: WizardId | undefined = INIT_WIZARD;
+  wizardId: WizardId | undefined = INIT_WIZARD ? INIT_WIZARD : undefined;
   theme: 'light' | 'dark' = undefined;
   initPayload: PayloadMap['ui:init'] = undefined;
   overlayStack: VNode[] = [];

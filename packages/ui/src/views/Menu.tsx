@@ -40,7 +40,7 @@ const EditorView: FunctionalComponent = observer(() => {
         <Text>Editor</Text>
       </Button>
 
-      <Text>{selection.nodes.length < 1 && 'Select a node...'}</Text>
+      {/* <Text marginTop={5}>{selection.nodes.length < 1 && 'Select a node'}</Text> */}
 
       <Divider size="S" marginY={20} />
 
