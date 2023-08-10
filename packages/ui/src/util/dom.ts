@@ -209,7 +209,9 @@ export function convertBlocksToTables(element: HTMLElement, blockClasses: string
     const divs = block.querySelectorAll(':scope > div');
     if (divs) {
       divs.forEach((div) => {
-        div.classList.add(...blockClasses);
+        if (blockClasses.length) {
+          div.classList.add(...blockClasses);
+        }
         const subDivs = div.querySelectorAll(':scope > div');
         if (subDivs && subDivs.length > 0) {
           const rowData: any[] = [];

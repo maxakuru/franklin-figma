@@ -359,7 +359,7 @@ function toClassName(name: string): string {
 
 function normalizeBlockName(name: string): [normalized: string, variants: string[]] {
   let [normalized, ...variants] = name.split('(');
-  variants = (variants[0] || '').replace(/\)$/, '').split(' ').map(toClassName);
+  variants = (variants[0] || '').replace(/\)$/, '').split(' ').map(toClassName).filter(v => !!v);
   normalized = toClassName(normalized);
 
   return [normalized, variants];
@@ -414,7 +414,9 @@ export default async function nodeToHTML(nodeId: string): Promise<{ html: string
           const div = document.createElement('div');
           div.innerHTML = html;
           const block = div.querySelector(`div.${normalized}`);
-          block.classList.add(...variants);
+          if (variants.length) {
+            block.classList.add(...variants);
+          }
           return div.innerHTML;
         }, { variants, html, normalized });
       } else if (!variants.length) {
