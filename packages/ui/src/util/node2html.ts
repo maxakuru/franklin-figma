@@ -32,7 +32,12 @@ export default async function nodeToHTML(node: SceneNode): Promise<string> {
   const proms = [...(doc.querySelectorAll('img') as unknown as HTMLImageElement[])].map(async (img) => {
     const hash = img.src.split('hash://')[1];
     img.dataset.hash = hash;
-    const bytes = imageMap[hash].bytes;
+    const bytes = imageMap[hash]?.bytes;
+
+    if (!bytes) {
+      // remove image, doesn't exist in design
+      return img.remove();
+    }
 
     // to use data urls
     // const blob = new Blob([bytes]);

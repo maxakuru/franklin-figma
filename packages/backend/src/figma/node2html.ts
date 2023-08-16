@@ -26,7 +26,7 @@ interface Context {
 type Visitor<TNode extends BaseNode = BaseNode> = (
   node: TNode,
   ctx: Context
-) => MaybePromise<string | void | [string, string] | [string, string, () => void] | ReturnDirective>;
+) => MaybePromise<string | void | [string, string] | [string, string, () => MaybePromise<void>] | ReturnDirective>;
 
 type Visitors = {
   [T in BaseNode['type']]: Visitor<BaseNodeWithType<T>>;
@@ -42,12 +42,14 @@ type DOMNode = {
   attrs: Record<string, string>;
   innerHTML?: string;
   innerText?: string;
+  parent: DOMNode | null;
   children?: DOMNode[];
+  linked: boolean;
 }
 
 type ParsedDOM = {
   root: DOMNode;
-  find: (predicate: (node: DOMNode) => boolean) => DOMNode | undefined;
+  find: (predicate: (node: DOMNode) => boolean, nonLinked?: boolean) => DOMNode | undefined;
   html: () => string;
 }
 
@@ -113,13 +115,15 @@ const parseDOM = async (html: string, selector: string = ''): Promise<undefined 
     // @ts-ignore
     function parseNode(node: HTMLElement, root: HTMLElement): DOMNode {
       const parsed: DOMNode = {
+        linked: false,
         selector: getSelector(node, root),
         tag: node.tagName,
         innerText: ['DIV'].includes(node.tagName) ? undefined : node.innerText,
         attrs: Object.fromEntries(Object.values(node.attributes).map((attr: any) => [attr.name, attr.value])),
         classes: node.className ? node.className.split(/\s+/) : [],
-        children: [...node.children].map((child) => parseNode(child, root)),
-      }
+        children: [...node.children].map((child) => parseNode(child, root))
+      } as DOMNode;
+
       // console.log('[backend/node2html] parsed node: ', node.tagName, node, parsed);
       return parsed;
     }
@@ -127,11 +131,20 @@ const parseDOM = async (html: string, selector: string = ''): Promise<undefined 
     return parseNode(rootEl, rootEl);
   }, { html, selector });
 
+  // assign parent node to each
+  const process = (node: DOMNode, parent: DOMNode | null) => {
+    node.parent = parent;
+    if (node.children) {
+      node.children.forEach((child) => process(child, node));
+    }
+  }
+  process(root, null);
+
   return {
     root,
     find(this: ParsedDOM, predicate: (node: DOMNode) => boolean) {
-      const _find = (node: DOMNode): DOMNode => {
-        if (predicate(node)) return node;
+      const _find = (node: DOMNode, nonLinked: boolean = true): DOMNode => {
+        if ((nonLinked ? !node.linked : true) && predicate(node)) return node;
         return node.children.reduce((prev, cur) => {
           if (prev) return prev;
           return _find(cur);
@@ -145,6 +158,11 @@ const parseDOM = async (html: string, selector: string = ''): Promise<undefined 
       let indent = 0;
 
       const _process = (node: DOMNode): string => {
+        if (!node.linked) {
+          // node not included in component
+          return out;
+        }
+
         const tag = node.tag.toLowerCase();
 
         out += `${out.match(/\s$/) ? '' : '\n'}${' '.repeat(indent)}<${tag}\
@@ -270,6 +288,16 @@ const visitors: Visitors = {
             console.warn('unhandled insertable main node type: ', mainNode.type, mainNode, insertable);
         }
       }
+
+      if (match) {
+        match.linked = true;
+        // if leaf is linked, all parents in hierarchy are too
+        let parent = match.parent;
+        while (parent) {
+          parent.linked = true;
+          parent = parent.parent;
+        }
+      }
     }
 
     ctx.doc += dom.html();
@@ -389,6 +417,7 @@ export default async function nodeToHTML(nodeId: string): Promise<{ html: string
         return [this._libraryBlocks[name], normalized, variants];
       }
 
+
       let html: string;
 
       if (typeof this._libraryBlocks[normalized] === 'string') {
@@ -396,7 +425,7 @@ export default async function nodeToHTML(nodeId: string): Promise<{ html: string
         html = this._libraryBlocks[normalized];
       } else {
         const row = this._libraryDefinition.find(row => normalized === normalizeBlockName(row.name)[0]);
-        if (!row || !row.path) return;
+        if (!row || !row.path) return [undefined, undefined, []];
 
         const resp = await fetch(row.path);
         if (!resp.ok) {
