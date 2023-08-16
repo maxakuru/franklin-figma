@@ -10,12 +10,13 @@
  * governing permissions and limitations under the License.
  */
 
-const PAGE_WIDTH = 620;
+const PAGE_WIDTH = 530;
 const CELL_PADDING = 20;
 const CELL_BORDER_WIDTH = 1;
 const CELL_TOTAL_PADDING = (CELL_PADDING * 2) + (CELL_BORDER_WIDTH * 2);
 const TABLE_HEADING_BG_COLOR = '#d9ead3';
-const TABLE_WRAPPER_WIDTH = 585;
+const TABLE_HEADING_BG_COLOR_DARK = '#813885';
+const TABLE_WRAPPER_WIDTH = 500;
 const TABLE_WRAPPER_MARGIN = '0 auto';
 
 /**
@@ -77,7 +78,8 @@ function decorateTableImg(img: HTMLImageElement, colCount: number) {
 function decorateTd(td: HTMLTableCellElement) {
   td.style.verticalAlign = 'top';
   td.style.padding = "5px 5px 5px 5px";
-  td.style.border = "1px solid #000";
+  // td.style.border = "1px solid #000"; // light mode
+  td.style.border = "1px solid #b0b0b0";
   td.style.verticalAlign = "top";
   td.style.overflowWrap = "break-word";
   td.style.overflow = "hidden";
@@ -113,7 +115,7 @@ export function createTable(data: any, blockClasses: string[] = []) {
       // The first column should be the block name row
       if (index === 0) {
         td.colSpan = maxColumns;
-        td.style.backgroundColor = TABLE_HEADING_BG_COLOR;
+        td.style.backgroundColor = TABLE_HEADING_BG_COLOR_DARK;
         tr.style.height = "22.5pt";
         const classes = cell.split(' ');
         const blockName = classes.shift();
