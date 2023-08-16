@@ -334,6 +334,26 @@ const visitors: Visitors = {
   TABLE: () => { },
 }
 
+const sortChildren = (node: GroupNode): BaseNode[] => {
+  if (!node.children) {
+    return [];
+  }
+  return [...node.children].sort((a, b) => {
+    /**
+     * Function used to determine the order of the elements. 
+     * It is expected to return a negative value if the first argument is less than the second argument, 
+     * zero if they're equal, and a positive value otherwise. 
+     */
+    if (a.y < b.y) {
+      return -1;
+    }
+    if (a.y === b.y) {
+      return a.x - b.x;
+    }
+    return 1;
+  });
+}
+
 const _nodeToHTML = async (node: BaseNode, ctx: Context): Promise<string> => {
   if ((node as SceneNode).visible === false) {
     return 'SKIP';
@@ -364,10 +384,9 @@ const _nodeToHTML = async (node: BaseNode, ctx: Context): Promise<string> => {
     ctx.wrappers.push(ret);
   }
 
-  if ((node as GroupNode).children) {
-    for (const child of (node as GroupNode).children) {
-      await _nodeToHTML(child, ctx);
-    }
+  const children = sortChildren(node as GroupNode);
+  for (const child of children) {
+    await _nodeToHTML(child, ctx);
   }
 
   if (ctx.wrappers.length) {
